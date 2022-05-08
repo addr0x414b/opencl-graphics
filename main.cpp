@@ -23,7 +23,8 @@ int main() {
 	int running = 1;
 
 	SDL_Renderer* renderer;
-	renderer = SDL_CreateRenderer(window, -1, 0);
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED |
+			SDL_RENDERER_PRESENTVSYNC);
 
 	while (running) {
 		while (SDL_PollEvent(&event)) {
@@ -36,4 +37,5 @@ int main() {
 		SDL_RenderPresent(renderer);
 	}
 
+	SDL_Quit();
 }
