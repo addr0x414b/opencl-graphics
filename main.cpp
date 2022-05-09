@@ -7,7 +7,7 @@ int main() {
 
 	SDL_Window* window;
 	window = SDL_CreateWindow(
-			"Cuda Graphics",
+			"OpenCL Graphics",
 			SDL_WINDOWPOS_CENTERED,
 			SDL_WINDOWPOS_CENTERED,
 			640,
