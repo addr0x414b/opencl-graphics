@@ -1,2 +1,2 @@
-# cuda-graphics
-Graphics that utilizes CUDA 
+# opencl-graphics
+Graphics that utilizes opencl
