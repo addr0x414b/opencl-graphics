@@ -1,3 +1,4 @@
+#include <SDL2/SDL_blendmode.h>
 #define CL_HPP_TARGET_OPENCL_VERSION 300
 #include <CL/opencl.hpp>
 #include <SDL2/SDL.h>
@@ -106,6 +107,8 @@ int main() {
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED |
 			SDL_RENDERER_PRESENTVSYNC);
 
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
 	SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
 			SDL_TEXTUREACCESS_STREAMING, 640, 480);
 
@@ -119,6 +122,7 @@ int main() {
 		| 0x000000FF;*/
 
 	SDL_UpdateTexture(texture, NULL, textureBuffer, 640*sizeof(uint32_t));
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 
 	while (running) {
 		while (SDL_PollEvent(&event)) {
