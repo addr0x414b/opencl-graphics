@@ -7,6 +7,9 @@
 #include <vector>
 #include <fstream>
 
+int WIDTH = 640;
+int HEIGHT = 480;
+
 int main() {
 
 	cl::Platform platform = cl::Platform::get();
@@ -17,72 +20,78 @@ int main() {
 	auto vendor = device.getInfo<CL_DEVICE_VENDOR>();
 	auto name = device.getInfo<CL_DEVICE_NAME>();
 	auto version = device.getInfo<CL_DEVICE_VERSION>();
-
 	std::cout << vendor << ", " << name << ", " << version << std::endl;
 
-	std::ifstream file("../test.cl");
+	cl::Context context(device);
 
-	std::string fileSrc(std::istreambuf_iterator<char>(file),
+	std::ifstream vertexFile("../src/opencl/vertex.cl");
+	std::string vertexSrc(std::istreambuf_iterator<char>(vertexFile),
 			(std::istreambuf_iterator<char>()));
 
-	cl::Context context(device);
-	cl_int error;
-	cl::Program program(context, fileSrc.c_str(), CL_TRUE, &error);
-	std::cout << "Program Error Code: " << error << std::endl;
+	cl_int err;
+	cl::Program vertexProgram(context, vertexSrc.c_str(), CL_TRUE, &err);
+	std::cout << "Vertex Program Error: " << err << std::endl;
 
-	cl::CommandQueue queue(context, device, 0, &error);
-	std::cout << "Queue Error Code: " << error << std::endl;
+	cl::CommandQueue queue(context, device, 0, &err);
+	std::cout << "Queue Error: " << err << std::endl;
 
-	float point[] = {
-		0.25f, 0.75f, 0.75f, 0.75f, 0.5f, 0.25f
+	/* x, y, z */
+	float points[] = {
+		-0.5f, -0.5f, -0.5f,
+		0.5f, -0.5f, -0.5f,
+		0.0f, 0.5f, -0.5f
 	};
 
-	cl::EnqueueArgs args(queue, cl::NDRange(sizeof(point) / sizeof(float)));
+	int pointsCount = sizeof(points) / sizeof(float);
 
-	cl::Kernel kernel(program, "test", &error);
-	cl::KernelFunctor<> test(kernel);
-	std::cout << "Kernel Error Code: " << error << std::endl;
+	cl::EnqueueArgs pointArgs(queue, cl::NDRange(pointsCount));
 
+	cl::Kernel centerFlipYKernel(vertexProgram, "centerFlipY", &err);
+	std::cout << "CenterFlipY Kernel Error: " << err << std::endl;
+	cl::KernelFunctor<> centerFlipY(centerFlipYKernel);
 
+	cl::Buffer pointsBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			pointsCount*sizeof(points), points, &err);
+	std::cout << "PointsBuffer Error: " << err << std::endl;
+	err = centerFlipYKernel.setArg(0, sizeof(cl_mem), &pointsBuffer);
+	std::cout << "CenterFlipYKernel Arg 0 Error: " << err << std::endl;
 
-	int out[6];
-	cl::Buffer inBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			6*sizeof(point), point, &error);
-	std::cout << "Error Code: " << error << std::endl;
-	error = kernel.setArg(0, sizeof(cl_mem), &inBuf);
-	std::cout << "Error Code: " << error << std::endl;
+	int pointsOut[pointsCount];
+	cl::Buffer pointsOutBuffer(context, CL_MEM_READ_WRITE, sizeof(pointsOut));
+	err = centerFlipYKernel.setArg(1, pointsOutBuffer);
+	std::cout << "CenterFlipYKernel Arg 1 Error: " << err << std::endl;
 
-	cl::Buffer outBuf(context, CL_MEM_WRITE_ONLY, sizeof(out));
-	error = kernel.setArg(1, outBuf);
-	std::cout << "Error Code: " << error << std::endl;
-	test(args);
+	cl::Buffer screenWidthBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			sizeof(WIDTH), &WIDTH, &err);
+	err = centerFlipYKernel.setArg(2, screenWidthBuffer);
+	std::cout << "CenterFlipYKernel Arg 2 Error: " << err << std::endl;
 
-	queue.enqueueReadBuffer(outBuf, CL_TRUE, 0, sizeof(out), out);
+	cl::Buffer screenHeightBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			sizeof(HEIGHT), &HEIGHT, &err);
+	err = centerFlipYKernel.setArg(3, screenHeightBuffer);
+	std::cout << "CenterFlipYKernel Arg 3 Error: " << err << std::endl;
 
-	/*std::cout << out[0] << ", " << out[1] << std::endl;
-	std::cout << out[2] << ", " << out[3] << std::endl;
-	std::cout << out[4] << ", " << out[5] << std::endl;*/
+	centerFlipY(pointArgs);
 
-	cl::Kernel kernel2(program, "test2", &error);
-	cl::KernelFunctor<> test2(kernel2);
-	std::cout << "Kernel Error Code: " << error << std::endl;
+	cl::Kernel drawPointsKernel(vertexProgram, "drawPoints", &err);
+	std::cout << "DrawPointsKernel Error: " << err << std::endl;
+	cl::KernelFunctor<> drawPoints(drawPointsKernel);
 
-	cl::Buffer in2Buf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			6*sizeof(out), out, &error);
-	std::cout << "Error Code: " << error << std::endl;
-	error = kernel2.setArg(0, sizeof(cl_mem), &in2Buf);
-	std::cout << "Error Code: " << error << std::endl;
+	err = drawPointsKernel.setArg(0, sizeof(cl_mem), &pointsOutBuffer);
+	std::cout << "DrawPointsKernel Arg 0 Error: " << err << std::endl;
 
-	//uint32_t* textureBuffer = new uint32_t[640*480];
-	uint32_t textureBuffer[640*480];
+	uint32_t textureBuffer[WIDTH*HEIGHT];
+	cl::Buffer pixelBuffer(context, CL_MEM_WRITE_ONLY, sizeof(textureBuffer));
+	err = drawPointsKernel.setArg(1, pixelBuffer);
+	std::cout << "DrawPointsKernel Arg 1 Error: " << err << std::endl;
 
-	cl::Buffer out2Buf(context, CL_MEM_WRITE_ONLY, sizeof(textureBuffer));
-	error = kernel2.setArg(1, out2Buf);
-	std::cout << "Error Code: " << error << std::endl;
+	err = drawPointsKernel.setArg(2, screenWidthBuffer);
+	std::cout << "DrawPointsKernel Arg 2 Error: " << err << std::endl;
 
-	test2(args);
+	drawPoints(pointArgs);
 
-	queue.enqueueReadBuffer(out2Buf, CL_TRUE, 0, sizeof(textureBuffer), textureBuffer);
+	queue.enqueueReadBuffer(pixelBuffer, CL_TRUE, 0, sizeof(textureBuffer),
+			textureBuffer);
 
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -91,9 +100,9 @@ int main() {
 			"OpenCL Graphics",
 			SDL_WINDOWPOS_CENTERED,
 			SDL_WINDOWPOS_CENTERED,
-			640,
-			480,
-			0);
+			WIDTH,
+			HEIGHT,
+			SDL_WINDOW_RESIZABLE);
 
 	if (window == NULL) {
 		std::cout << "Failed to create window" << std::endl;
@@ -110,18 +119,9 @@ int main() {
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
 	SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
-			SDL_TEXTUREACCESS_STREAMING, 640, 480);
+			SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
-	/*textureBuffer[(out[1]*640) + out[0]] = 0xFF000000 | 0x00FF0000 | 0x0000FF00
-		| 0x000000FF;
-
-	textureBuffer[(out[3]*640) + out[2]] = 0xFF000000 | 0x00FF0000 | 0x0000FF00
-		| 0x000000FF;
-
-	textureBuffer[(out[5]*640) + out[4]] = 0xFF000000 | 0x00FF0000 | 0x0000FF00
-		| 0x000000FF;*/
-
-	SDL_UpdateTexture(texture, NULL, textureBuffer, 640*sizeof(uint32_t));
+	SDL_UpdateTexture(texture, NULL, textureBuffer, WIDTH*sizeof(uint32_t));
 	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 
 	while (running) {
@@ -132,8 +132,6 @@ int main() {
 		}
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
-		//SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-		//SDL_RenderDrawPoint(renderer, out[0], out[1]);
 		SDL_RenderCopy(renderer, texture, NULL, NULL);
 		SDL_RenderPresent(renderer);
 	}
