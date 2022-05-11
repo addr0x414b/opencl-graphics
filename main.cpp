@@ -6,9 +6,16 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <stdexcept>
 
 int WIDTH = 640;
 int HEIGHT = 480;
+
+void checkError(cl_int err, std::string target) {
+	if (err != 0) {
+		throw std::runtime_error("Error caught at " + target + ": " + std::to_string(err));
+	}
+}
 
 int main() {
 
@@ -30,10 +37,10 @@ int main() {
 
 	cl_int err;
 	cl::Program vertexProgram(context, vertexSrc.c_str(), CL_TRUE, &err);
-	std::cout << "Vertex Program Error: " << err << std::endl;
+	checkError(err, "Vertex Program");
 
 	cl::CommandQueue queue(context, device, 0, &err);
-	std::cout << "Queue Error: " << err << std::endl;
+	checkError(err, "Queue");
 
 	/* x, y, z */
 	float points[] = {
@@ -47,46 +54,42 @@ int main() {
 	cl::EnqueueArgs pointArgs(queue, cl::NDRange(pointsCount));
 
 	cl::Kernel centerFlipYKernel(vertexProgram, "centerFlipY", &err);
-	std::cout << "CenterFlipY Kernel Error: " << err << std::endl;
+	checkError(err, "CenterFlipY Kernel");
 	cl::KernelFunctor<> centerFlipY(centerFlipYKernel);
 
 	cl::Buffer pointsBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
 			pointsCount*sizeof(points), points, &err);
-	std::cout << "PointsBuffer Error: " << err << std::endl;
+	checkError(err, "PointsBuffer");
 	err = centerFlipYKernel.setArg(0, sizeof(cl_mem), &pointsBuffer);
-	std::cout << "CenterFlipYKernel Arg 0 Error: " << err << std::endl;
+	checkError(err, "CenterFlipYKernel Arg 0");
 
 	int pointsOut[pointsCount];
 	cl::Buffer pointsOutBuffer(context, CL_MEM_READ_WRITE, sizeof(pointsOut));
 	err = centerFlipYKernel.setArg(1, pointsOutBuffer);
-	std::cout << "CenterFlipYKernel Arg 1 Error: " << err << std::endl;
+	checkError(err, "CenterFlipYKernel Arg 1");
 
-	cl::Buffer screenWidthBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			sizeof(WIDTH), &WIDTH, &err);
-	err = centerFlipYKernel.setArg(2, screenWidthBuffer);
-	std::cout << "CenterFlipYKernel Arg 2 Error: " << err << std::endl;
+	err = centerFlipYKernel.setArg(2, sizeof(int), &WIDTH);
+	checkError(err, "CenterFlipYKernel Arg 2");
 
-	cl::Buffer screenHeightBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			sizeof(HEIGHT), &HEIGHT, &err);
-	err = centerFlipYKernel.setArg(3, screenHeightBuffer);
-	std::cout << "CenterFlipYKernel Arg 3 Error: " << err << std::endl;
+	err = centerFlipYKernel.setArg(3, sizeof(int), &HEIGHT);
+	checkError(err, "CenterFlipYKernel Arg 3");
 
 	centerFlipY(pointArgs);
 
 	cl::Kernel drawPointsKernel(vertexProgram, "drawPoints", &err);
-	std::cout << "DrawPointsKernel Error: " << err << std::endl;
+	checkError(err, "DrawPointsKernel");
 	cl::KernelFunctor<> drawPoints(drawPointsKernel);
 
 	err = drawPointsKernel.setArg(0, sizeof(cl_mem), &pointsOutBuffer);
-	std::cout << "DrawPointsKernel Arg 0 Error: " << err << std::endl;
+	checkError(err, "drawPointsKernel Arg 0");
 
 	uint32_t textureBuffer[WIDTH*HEIGHT];
 	cl::Buffer pixelBuffer(context, CL_MEM_WRITE_ONLY, sizeof(textureBuffer));
 	err = drawPointsKernel.setArg(1, pixelBuffer);
-	std::cout << "DrawPointsKernel Arg 1 Error: " << err << std::endl;
+	checkError(err, "drawPointsKernel Arg 1");
 
-	err = drawPointsKernel.setArg(2, screenWidthBuffer);
-	std::cout << "DrawPointsKernel Arg 2 Error: " << err << std::endl;
+	err = drawPointsKernel.setArg(2, sizeof(int), &WIDTH);
+	checkError(err, "drawPointsKernel Arg 2");
 
 	drawPoints(pointArgs);
 
@@ -105,8 +108,7 @@ int main() {
 			SDL_WINDOW_RESIZABLE);
 
 	if (window == NULL) {
-		std::cout << "Failed to create window" << std::endl;
-		return 1;
+		throw std::runtime_error("Failed to create window");
 	}
 
 	SDL_Event event;
@@ -136,7 +138,5 @@ int main() {
 		SDL_RenderPresent(renderer);
 	}
 
-
 	SDL_Quit();
-	//delete[] textureBuffer;
 }
