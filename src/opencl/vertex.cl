@@ -1,26 +1,16 @@
-__kernel void perspectiveMult(__global float* points, __global float* output) {
+__kernel void multiplyPoints(__global float* points, __global float* output,
+										__global float* m) {
 	int i = get_global_id(0);
-	float w;
-	float fovRad = (60.f/2.f) * (3.141592f / 180.f);
-	float aspect = 640 / 480;
-	float zNear = 0.1f;
-	float zFar = 1000.f;
-
-	float zz = (1.f / (tan(fovRad))) / aspect;
-	float oo = 1.f / tan(fovRad);
-	float tt = ((-2.f * zNear) / (zFar - zNear)) - 1.f;
-	float tht = (-zNear * zFar) / (zFar - zNear);
-	float tth = -1.0f;
+	int w;
 	if (i % 3 == 0) {
-		output[i] = (points[i] * zz);
+		output[i] = (points[i] * m[0]) + (points[i+1] * m[1]) + (points[i+2] * m[2]) + m[3];
 	}
 	if (i % 3 == 1) {
-		output[i] = points[i] * oo;
-
+		output[i] = points[i-1] * m[4] + points[i] * m[5] + points[i+1] * m[6] + m[7];
 	}
 	if (i % 3 == 2) {
-		output[i] = points[i] * tt + tth;
-		w = points[i] * tht;
+		output[i] = points[i-2] * m[8] + points[i-1] * m[9] + points[i] * m[10] + m[11];
+		w = points[i-2] * m[12] + points[i-1] * m[13] + points[i] * m[14] + m[15];
 		if (w != 0) {
 			output[i] /= w;
 			output[i-1] /= w;

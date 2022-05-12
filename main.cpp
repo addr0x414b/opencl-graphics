@@ -44,35 +44,88 @@ int main() {
 
 	/* x, y, z */
 	float points[] = {
-		-0.5f, -0.5f, -15.f,
-		0.5f, -0.5f, -15.0f,
-		0.0f, 0.5f, -15.0f,
-		0.0f, 0.0f, -15.0f
+		-0.5f, -0.5f, 0.f,
+		-0.5f, 0.5f, 0.0f,
+		0.5f, -0.5f, 0.0f,
+		0.5f, 0.5f, 0.0f
 	};
+
+	float radians = (80.f) * (3.141592f / 180.f);
+
+	float rotYMat[4][4] = {
+		{1.f, 0.0f, 0.0f, 0.0f},
+		{0.0f, cosf(radians), -sinf(radians), 0.0f},
+		{0.0f, sinf(radians), cosf(radians), 0.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f}
+	};
+
+	float*  rotYMatPtr = rotYMat[0];
+
+	float fovRad = (60.f/2.f) * (3.141592f / 180.f);
+	float aspect = (float)WIDTH / HEIGHT;
+	float zNear = 0.1f;
+	float zFar = 1000.f;
+
+	float zz = (1.f / (tan(fovRad))) / aspect;
+	float oo = 1.f / tan(fovRad);
+	float tt = ((-2.f * zNear) / (zFar - zNear)) - 1.f;
+	float tht = (-zNear * zFar) / (zFar - zNear);
+	float tth = -1.0f;
+
+	float projMat[4][4] = {
+		{zz, 0.0f, 0.0f, 0.0f},
+		{0.0f, oo, 0.0f, 0.0f},
+		{0.0f, 0.0f, tt, tth},
+		{0.0f, 0.0f, tht, 0.0f}
+	};
+
+	float* projMatPtr = projMat[0];
 
 	int pointsCount = sizeof(points) / sizeof(float);
 
 	cl::EnqueueArgs pointArgs(queue, cl::NDRange(pointsCount));
 
 	cl::Buffer pointsBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			pointsCount*sizeof(points), points, &err);
+			pointsCount*sizeof(float), points, &err);
 	checkError(err, "PointsBuffer");
 
 	float pointsOut[pointsCount];
 	cl::Buffer pointsOutBuffer(context, CL_MEM_READ_WRITE, sizeof(pointsOut));
 	checkError(err, "PointsOutBuffer");
 
-	cl::Kernel perspectiveMultKernel(vertexProgram, "perspectiveMult", &err);
-	checkError(err, "PerspectiveMult");
-	cl::KernelFunctor<> perspectiveMult(perspectiveMultKernel);
+	cl::Kernel multiplyPointsKernel(vertexProgram, "multiplyPoints", &err);
+	checkError(err, "MultiplyPointsKernel");
+	cl::KernelFunctor<> multiplyPoints(multiplyPointsKernel);
 
-	err = perspectiveMultKernel.setArg(0, sizeof(cl_mem), &pointsBuffer);
-	checkError(err, "PerspectiveMult Arg 0");
+	cl::Buffer rotYMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			4*4*sizeof(float), rotYMatPtr, &err);
+	checkError(err, "RotYMatBuffer");
 
-	err = perspectiveMultKernel.setArg(1, pointsOutBuffer);
-	checkError(err, "PerspectiveMult Arg 1");
+	err = multiplyPointsKernel.setArg(0, sizeof(cl_mem), &pointsBuffer);
+	checkError(err, "ProjMat Arg 0");
 
-	perspectiveMult(pointArgs);
+	err = multiplyPointsKernel.setArg(1, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "ProjMat Arg 1");
+
+	err = multiplyPointsKernel.setArg(2, sizeof(cl_mem), &rotYMatBuffer);
+	checkError(err, "ProjMat Arg 2");
+
+	multiplyPoints(pointArgs);
+
+	cl::Buffer projMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			4*4*sizeof(float), projMatPtr, &err);
+	checkError(err, "ProjMatBuffer");
+
+	err = multiplyPointsKernel.setArg(0, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "ProjMat Arg 0");
+
+	err = multiplyPointsKernel.setArg(1, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "ProjMat Arg 1");
+
+	err = multiplyPointsKernel.setArg(2, sizeof(cl_mem), &projMatBuffer);
+	checkError(err, "ProjMat Arg 2");
+
+	multiplyPoints(pointArgs);
 
 	cl::Kernel centerFlipYKernel(vertexProgram, "centerFlipY", &err);
 	checkError(err, "CenterFlipY Kernel");
