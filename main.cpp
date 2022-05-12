@@ -44,27 +44,43 @@ int main() {
 
 	/* x, y, z */
 	float points[] = {
-		-0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.0f, 0.5f, -0.5f
+		-0.5f, -0.5f, -15.f,
+		0.5f, -0.5f, -15.0f,
+		0.0f, 0.5f, -15.0f,
+		0.0f, 0.0f, -15.0f
 	};
 
 	int pointsCount = sizeof(points) / sizeof(float);
 
 	cl::EnqueueArgs pointArgs(queue, cl::NDRange(pointsCount));
 
+	cl::Buffer pointsBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			pointsCount*sizeof(points), points, &err);
+	checkError(err, "PointsBuffer");
+
+	float pointsOut[pointsCount];
+	cl::Buffer pointsOutBuffer(context, CL_MEM_READ_WRITE, sizeof(pointsOut));
+	checkError(err, "PointsOutBuffer");
+
+	cl::Kernel perspectiveMultKernel(vertexProgram, "perspectiveMult", &err);
+	checkError(err, "PerspectiveMult");
+	cl::KernelFunctor<> perspectiveMult(perspectiveMultKernel);
+
+	err = perspectiveMultKernel.setArg(0, sizeof(cl_mem), &pointsBuffer);
+	checkError(err, "PerspectiveMult Arg 0");
+
+	err = perspectiveMultKernel.setArg(1, pointsOutBuffer);
+	checkError(err, "PerspectiveMult Arg 1");
+
+	perspectiveMult(pointArgs);
+
 	cl::Kernel centerFlipYKernel(vertexProgram, "centerFlipY", &err);
 	checkError(err, "CenterFlipY Kernel");
 	cl::KernelFunctor<> centerFlipY(centerFlipYKernel);
 
-	cl::Buffer pointsBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			pointsCount*sizeof(points), points, &err);
-	checkError(err, "PointsBuffer");
-	err = centerFlipYKernel.setArg(0, sizeof(cl_mem), &pointsBuffer);
+	err = centerFlipYKernel.setArg(0, sizeof(cl_mem), &pointsOutBuffer);
 	checkError(err, "CenterFlipYKernel Arg 0");
 
-	int pointsOut[pointsCount];
-	cl::Buffer pointsOutBuffer(context, CL_MEM_READ_WRITE, sizeof(pointsOut));
 	err = centerFlipYKernel.setArg(1, pointsOutBuffer);
 	checkError(err, "CenterFlipYKernel Arg 1");
 
