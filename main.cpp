@@ -11,6 +11,17 @@
 int WIDTH = 640;
 int HEIGHT = 480;
 
+float fovRad = (60.f/2.f) * (3.141592f / 180.f);
+float aspect = (float)WIDTH / HEIGHT;
+float zNear = 0.1f;
+float zFar = 1000.f;
+
+float zz = (1.f / (tanf(fovRad))) / aspect;
+float oo = 1.f / tanf(fovRad);
+float tt = ((-2.f * zNear) / (zFar - zNear)) - 1.f;
+float tht = (-zNear * zFar) / (zFar - zNear);
+float tth = -1.0f;
+
 void checkError(cl_int err, std::string target) {
 	if (err != 0) {
 		throw std::runtime_error("Error caught at " + target + ": " + std::to_string(err));
@@ -18,6 +29,9 @@ void checkError(cl_int err, std::string target) {
 }
 
 int main() {
+
+	std::cout << "Radians: " << fovRad << std::endl;
+	std::cout << "Aspect: " << aspect << std::endl;
 
 	cl::Platform platform = cl::Platform::get();
 	std::vector<cl::Device> devices;
@@ -44,13 +58,160 @@ int main() {
 
 	/* x, y, z */
 	float points[] = {
-		-0.5f, -0.5f, 0.f,
-		-0.5f, 0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.5f, 0.5f, 0.0f
+		-0.5f, -0.5f, -0.0f,
+		-0.5f, 0.5f, -0.0f,
+		0.5f, -0.5f, -0.0f,
+		0.5f, 0.5f, -0.0f,
+		0.5f, -0.5f, -0.5f,
+		0.5f, 0.5f, -0.5f
+	};
+	int pointsCount = sizeof(points) / sizeof(float);
+
+	float radians = (65.0f) * (3.141592f / 180.f);
+
+	float rotYMat[4][4] = {
+		{1.f, 0.0f, 0.0f, 0.0f},
+		{0.0f, cosf(radians), sinf(radians), 0.0f},
+		{0.0f, -sinf(radians), cosf(radians), 0.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f}
 	};
 
-	float radians = (80.f) * (3.141592f / 180.f);
+	float* rotYMatPtr = rotYMat[0];
+
+	float translation[4][4] = {
+		{1.f, 0.0f, 0.0f, 0.0f},
+		{0.0f, 1.f, 0.0f, 0.0f},
+		{0.0f, 0.0f, 1.0f, -15.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f}
+	};
+
+	float* translationPtr = translation[0];
+
+	float projMat[4][4] = {
+		{zz, 0.0f, 0.0f, 0.0f},
+		{0.0f, oo, 0.0f, 0.0f},
+		{0.0f, 0.0f, tt, tth},
+		{0.0f, 0.0f, tht, 0.0f}
+	};
+
+	float* projMatPtr = projMat[0];
+
+	cl::EnqueueArgs pointArgs(queue, cl::NDRange(pointsCount));
+
+	cl::Buffer pointsBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			pointsCount*sizeof(float), points, &err);
+	checkError(err, "PointsBuffer");
+
+	float pointsOut[pointsCount];
+	cl::Buffer pointsOutBuffer(context, CL_MEM_READ_WRITE, sizeof(pointsOut));
+	checkError(err, "PointsOutBuffer");
+
+	cl::Kernel multiplyPointsKernel(vertexProgram, "multiplyPoints", &err);
+	checkError(err, "MultiplyPointsKernel");
+	cl::KernelFunctor<> multiplyPoints(multiplyPointsKernel);
+
+	cl::Buffer rotYMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			4*4*sizeof(float), rotYMatPtr, &err);
+	checkError(err, "RotYMatBuffer");
+
+	err = multiplyPointsKernel.setArg(0, sizeof(cl_mem), &pointsBuffer);
+	checkError(err, "ProjMat Arg 0");
+
+	err = multiplyPointsKernel.setArg(1, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "ProjMat Arg 1");
+
+	err = multiplyPointsKernel.setArg(2, sizeof(cl_mem), &rotYMatBuffer);
+	checkError(err, "ProjMat Arg 2");
+
+	multiplyPoints(pointArgs);
+
+	cl::Buffer translationBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			4*4*sizeof(float), translationPtr, &err);
+	checkError(err, "TranslationBuffer");
+
+	err = multiplyPointsKernel.setArg(0, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "Translation Arg 0");
+
+	err = multiplyPointsKernel.setArg(1, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "Translation Arg 1");
+
+	err = multiplyPointsKernel.setArg(2, sizeof(cl_mem), &translationBuffer);
+	checkError(err, "Translation Arg 2");
+
+	multiplyPoints(pointArgs);
+
+	cl::Buffer projMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			4*4*sizeof(float), projMatPtr, &err);
+	checkError(err, "ProjMatBuffer");
+
+	err = multiplyPointsKernel.setArg(0, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "ProjMat Arg 0");
+
+	err = multiplyPointsKernel.setArg(1, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "ProjMat Arg 1");
+
+	err = multiplyPointsKernel.setArg(2, sizeof(cl_mem), &projMatBuffer);
+	checkError(err, "ProjMat Arg 2");
+
+	multiplyPoints(pointArgs);
+
+	cl::Kernel centerFlipYKernel(vertexProgram, "centerFlipY", &err);
+	checkError(err, "CenterFlipY Kernel");
+	cl::KernelFunctor<> centerFlipY(centerFlipYKernel);
+
+	err = centerFlipYKernel.setArg(0, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "CenterFlipYKernel Arg 0");
+
+	err = centerFlipYKernel.setArg(1, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "CenterFlipYKernel Arg 1");
+
+	err = centerFlipYKernel.setArg(2, sizeof(int), &WIDTH);
+	checkError(err, "CenterFlipYKernel Arg 2");
+
+	err = centerFlipYKernel.setArg(3, sizeof(int), &HEIGHT);
+	checkError(err, "CenterFlipYKernel Arg 3");
+
+	centerFlipY(pointArgs);
+
+	cl::Kernel drawPointsKernel(vertexProgram, "drawPoints", &err);
+	checkError(err, "DrawPointsKernel");
+	cl::KernelFunctor<> drawPoints(drawPointsKernel);
+
+	err = drawPointsKernel.setArg(0, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "drawPointsKernel Arg 0");
+
+	uint32_t textureBuffer[WIDTH*HEIGHT];
+	cl::Buffer pixelBuffer(context, CL_MEM_WRITE_ONLY, sizeof(textureBuffer));
+	err = drawPointsKernel.setArg(1, pixelBuffer);
+	checkError(err, "drawPointsKernel Arg 1");
+
+	err = drawPointsKernel.setArg(2, sizeof(int), &WIDTH);
+	checkError(err, "drawPointsKernel Arg 2");
+
+	drawPoints(pointArgs);
+
+	cl::Kernel drawTrigKernel(vertexProgram, "drawTrig", &err);
+	checkError(err, "DrawTrigKernel");
+	cl::KernelFunctor<> drawTrig(drawTrigKernel);
+
+	err = drawTrigKernel.setArg(0, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "DrawTrigKernel Arg 0");
+
+	err = drawTrigKernel.setArg(1, pixelBuffer);
+	checkError(err, "DrawTrigKernel Arg 1");
+
+	err = drawTrigKernel.setArg(2, sizeof(int), &WIDTH);
+	checkError(err, "DrawTrigKernel Arg 2");
+
+	err = drawTrigKernel.setArg(3, sizeof(int), &pointsCount);
+	checkError(err, "DrawTrigKernel Arg 3");
+
+	drawTrig(pointArgs);
+
+	queue.enqueueReadBuffer(pixelBuffer, CL_TRUE, 0, sizeof(textureBuffer),
+			textureBuffer);
+
+	/*float radians = (0.f) * (3.141592f / 180.f);
 
 	float rotYMat[4][4] = {
 		{1.f, 0.0f, 0.0f, 0.0f},
@@ -59,15 +220,15 @@ int main() {
 		{0.0f, 0.0f, 0.0f, 1.0f}
 	};
 
-	float*  rotYMatPtr = rotYMat[0];
+	float* rotYMatPtr = rotYMat[0];
 
 	float fovRad = (60.f/2.f) * (3.141592f / 180.f);
 	float aspect = (float)WIDTH / HEIGHT;
 	float zNear = 0.1f;
 	float zFar = 1000.f;
 
-	float zz = (1.f / (tan(fovRad))) / aspect;
-	float oo = 1.f / tan(fovRad);
+	float zz = (1.f / (tanf(fovRad))) / aspect;
+	float oo = 1.f / tanf(fovRad);
 	float tt = ((-2.f * zNear) / (zFar - zNear)) - 1.f;
 	float tht = (-zNear * zFar) / (zFar - zNear);
 	float tth = -1.0f;
@@ -162,8 +323,26 @@ int main() {
 
 	drawPoints(pointArgs);
 
+	cl::Kernel drawTrigKernel(vertexProgram, "drawTrig", &err);
+	checkError(err, "DrawTrigKernel");
+	cl::KernelFunctor<> drawTrig(drawTrigKernel);
+
+	err = drawTrigKernel.setArg(0, sizeof(cl_mem), &pointsOutBuffer);
+	checkError(err, "DrawTrigKernel Arg 0");
+
+	err = drawTrigKernel.setArg(1, pixelBuffer);
+	checkError(err, "DrawTrigKernel Arg 1");
+
+	err = drawTrigKernel.setArg(2, sizeof(int), &WIDTH);
+	checkError(err, "DrawTrigKernel Arg 2");
+
+	err = drawTrigKernel.setArg(3, sizeof(int), &pointsCount);
+	checkError(err, "DrawTrigKernel Arg 3");
+
+	drawTrig(pointArgs);
+
 	queue.enqueueReadBuffer(pixelBuffer, CL_TRUE, 0, sizeof(textureBuffer),
-			textureBuffer);
+			textureBuffer);*/
 
 	SDL_Init(SDL_INIT_VIDEO);
 
