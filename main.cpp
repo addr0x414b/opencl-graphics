@@ -42,9 +42,9 @@ int main() {
 	checkError(err, "Queue");
 
 	float vertices[] = {
-		-5.5f, -5.5f, -0.3f,
-		5.5f, -5.5f, -0.3f,
-		0.0f, 5.5f, -0.3f
+		-5.5f, -5.5f, -1.f,
+		5.5f, -5.5f, -1.f,
+		0.0f, 5.5f, -1.f
 	};
 	int pointCount = sizeof(vertices) / sizeof(float);
 
