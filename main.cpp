@@ -7,8 +7,10 @@
 #include <fstream>
 #include <stdexcept>
 
-int SCREEN_WIDTH = 1920;
-int SCREEN_HEIGHT = 1080;
+int SCREEN_WIDTH = 640;
+int SCREEN_HEIGHT = 480;
+float FOV = 60.0f;
+
 
 void checkError(cl_int err, std::string location) {
 	if (err != 0) {
@@ -41,10 +43,44 @@ int main() {
 	cl::CommandQueue queue(context, device, 0, &err);
 	checkError(err, "Queue");
 
+	float fovRad = (FOV/2.0f) * (3.141592f / 180.0f);
+	float aspect = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
+
+	float projMat[4][4] = {0.0f};
+	projMat[0][0] = (1.0f / tanf(fovRad)) / aspect;
+	projMat[1][1] = -(1.0f / tanf(fovRad));
+	projMat[2][2] = ((-2.0f * 0.1f) / (1000.0f - 0.1f)) - 1.0f;
+	projMat[2][3] = -1.0f;
+	projMat[3][2] = (-0.1f * 1000.0f) / (1000.0f - 0.1f);
+
+	float* projMatPtr = projMat[0];
+
+	/*float m[16];
+	  m[0] = (1.0f / tan(fovRad)) / aspect;
+	  m[1] = 0.0f;
+	  m[2] = 0.0f;
+	  m[3] = 0.0f;
+
+	  m[4] = 0.0f;
+	  m[5] = -(1.0f / tan(fovRad));
+	  m[6] = 0.0f;
+	  m[7] = 0.0f;
+
+	  m[8] = 0.0f;
+	  m[9] = 0.0f;
+	  m[10] = ((-2.0f * 0.1f) / (1000.0f - 0.1f)) - 1.0f;
+	  m[11] = -1.0f;
+
+	  m[12] = 0.0f;
+	  m[13] = 0.0f;
+	  m[14] = (-0.1f * 1000.0f) / (1000.0f - 0.1f);
+	  m[15] = 0.0f;*/
+
 	float vertices[] = {
-		-5.5f, -5.5f, -1.f,
-		5.5f, -5.5f, -1.f,
-		0.0f, 5.5f, -1.f
+		-1.0f, -1.0f, -0.5f,
+		1.0f, -1.0f, -0.5f,
+		-1.0f, 1.0f, -0.5f,
+		1.0f, 1.0f, -0.5f
 	};
 	int pointCount = sizeof(vertices) / sizeof(float);
 
@@ -83,6 +119,13 @@ int main() {
 
 	err = submitVerticesKernel.setArg(5, sizeof(int), &pointCount);
 	checkError(err, "SubmitVerticesKernel Arg 5");
+
+	cl::Buffer projMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			16*sizeof(float), projMatPtr, &err);
+	checkError(err, "ProjMatBuffer");
+
+	err = submitVerticesKernel.setArg(6, sizeof(cl_mem), &projMatBuffer);
+	checkError(err, "SubmitVerticesKernel Arg 6");
 
 	submitVertices(vertexArgs);
 

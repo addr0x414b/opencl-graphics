@@ -143,35 +143,11 @@ void multiply(float* input, float* output, float* m) {
 
 __kernel void submitVertices(__global float* input, __global float* output,
 		__global int* screen, int screenWidth,
-		int screenHeight, int pointCount) {
+		int screenHeight, int pointCount, __global float* projMat) {
 
 	int i = get_global_id(0);
 
-	float fovRad = (60.0f/2.0f) * (3.141592f / 180.0f);
-	float aspect = (float)screenWidth / (float)screenHeight;
-
-	float m[16];
-	m[0] = (1.0f / tan(fovRad)) / aspect;
-	m[1] = 0.0f;
-	m[2] = 0.0f;
-	m[3] = 0.0f;
-
-	m[4] = 0.0f;
-	m[5] = -(1.0f / tan(fovRad));
-	m[6] = 0.0f;
-	m[7] = 0.0f;
-
-	m[8] = 0.0f;
-	m[9] = 0.0f;
-	m[10] = ((-2.0f * 0.1f) / (1000.0f - 0.1f)) - 1.0f;
-	m[11] = -1.0f;
-
-	m[12] = 0.0f;
-	m[13] = 0.0f;
-	m[14] = (-0.1f * 1000.0f) / (1000.0f - 0.1f);
-	m[15] = 0.0f;
-
-	multiply(input, output, m);
+	multiply(input, output, projMat);
 	barrier(CLK_LOCAL_MEM_FENCE);
 
 	centerPoints(output, output, screenWidth, screenHeight);
