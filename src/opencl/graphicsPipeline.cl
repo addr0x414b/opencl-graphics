@@ -102,11 +102,19 @@ void centerPoints(float* input, float* output, int screenWidth,
 	int i = get_global_id(0);
 
 	if (i % 3 == 0) {
-		float x = input[i] * ((float)screenWidth / (float)screenHeight);
-		output[i] = x + ((float)screenWidth / 2.0f);
+		//float x = input[i] * ((float)screenWidth / (float)screenHeight);
+		//output[i] = x + ((float)screenWidth / 2.0f);
+		//output[i] = input[i] + 50.0f;
+		//output[i] *= 0.01f * (float)screenWidth;
+		output[i] = input[i] * 150.0f;
+		output[i] += (float)screenWidth / 2.0f;
 	}
 	if (i % 3 == 1) {
-		output[i] = input[i] + ((float)screenHeight / 2.0f);
+		//output[i] = input[i] + ((float)screenHeight / 2.0f);
+		//output[i] = input[i] + 50.0f;
+		//output[i] *= 0.01f * (float)screenHeight;
+		output[i] = -input[i] * 150.0f;
+		output[i] += (float)screenHeight / 2.0f;
 	}
 
 }
@@ -114,6 +122,7 @@ void centerPoints(float* input, float* output, int screenWidth,
 void multiply(float* input, float* output, float* m) {
 
 	int i = get_global_id(0);
+
 
 	if (i % 3 == 0) {
 		output[i] = (input[i] * m[0]) + (input[i+1] * m[1]) + (input[i+2] * m[2])
@@ -136,22 +145,44 @@ void multiply(float* input, float* output, float* m) {
 		if (w != 0.0f) {
 			output[i] /= w;
 			output[i+1] /= w;
-			output[i+2] /= w;
+			output[i+2] = output[i+2] / w;
 		}
 	}
 }
 
 __kernel void submitVertices(__global float* input, __global float* output,
 		__global int* screen, int screenWidth,
-		int screenHeight, int pointCount, __global float* projMat) {
+		int screenHeight, int pointCount, __global float* projMat,
+		__global float* scaleMat, __global float* rotMat,
+		__global float* transMat, __global float* scaled,
+		__global float* rotated, __global float* translated) {
 
 	int i = get_global_id(0);
 
-	multiply(input, output, projMat);
+	multiply(input, scaled, scaleMat);
 	barrier(CLK_LOCAL_MEM_FENCE);
 
+	multiply(scaled, rotated, rotMat);
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	multiply(rotated, translated, transMat);
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	multiply(translated, output, projMat);
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	if ( i == 0) {
+		printf("INPUT: (%f, %f, %f)\n", input[0], input[1], input[2]);
+		printf("GPU Scaled: (%f, %f, %f)\n", scaled[0], scaled[1], scaled[2]);
+		printf("GPU Rotated: (%f, %f, %f)\n", rotated[0], rotated[1], rotated[2]);
+		printf("GPU Translated: (%f, %f, %f)\n",
+				 translated[0], translated[1], translated[2]);
+		printf("GPU Projected: (%f, %f, %f)\n", output[0], output[1], output[2]);
+	}
+
+
 	centerPoints(output, output, screenWidth, screenHeight);
-	barrier(CLK_LOCAL_MEM_FENCE);
+	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	drawTrigs(output, screen, screenWidth, screenHeight, pointCount);
 	barrier(CLK_LOCAL_MEM_FENCE);
