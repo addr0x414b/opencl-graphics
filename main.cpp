@@ -149,207 +149,7 @@ int main() {
 	cl::CommandQueue queue(context, device, 0, &err);
 	checkError(err, "Queue");
 
-	float fovRad = (FOV/2.0f) * (3.141592f / 180.0f);
-	float aspect = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
-
-	/*float projMat[4][4] = {0.0f};
-	  projMat[0][0] = (1.0f / tanf(fovRad)) / aspect;
-	  projMat[1][1] = (1.0f / tanf(fovRad));
-	  projMat[2][2] = ((-2.0f * 0.1f) / (1000.0f - 0.1f)) - 1.0f;
-	  projMat[2][3] = -1.0f;
-	  projMat[3][2] = (-0.1f * 1000.0f) / (1000.0f - 0.1f);
-	  float* projMatPtr = projMat[0];
-
-	  float scaleAmt = 1.f;
-	  float scaleMat[4][4] = {0.0f};
-	  scaleMat[0][0] = scaleAmt;
-	  scaleMat[1][1] = scaleAmt;
-	  scaleMat[2][2] = scaleAmt;
-	  scaleMat[3][3] = 1.0f;
-	  float* scaleMatPtr = scaleMat[0];
-
-	  float xRot = toRad(0.0f);
-	  float yRot = toRad(50.0f);
-	  float zRot = toRad(0.0f);
-	  float rotMat[4][4] = {0.0f};
-	  rotMat[0][0] = cosf(yRot) * cosf(zRot);
-	  rotMat[0][1] = cosf(yRot) * sinf(zRot);
-	  rotMat[0][2] = -sinf(yRot);
-
-	  rotMat[1][0] = (sinf(xRot) * sinf(yRot) * cosf(zRot)) -
-	  (cosf(xRot) * sinf(zRot));
-	  rotMat[1][1] = (sinf(xRot) * sinf(yRot) * sinf(zRot)) +
-	  (cosf(xRot) * cosf(zRot));
-	  rotMat[1][2] = sinf(xRot) * cosf(yRot);
-
-	  rotMat[2][0] = (cosf(xRot) * sinf(yRot) * cosf(zRot)) +
-	  (sinf(xRot) * sinf(zRot));
-	  rotMat[2][1] = (cosf(xRot) * sinf(yRot) * sinf(zRot)) -
-	  (sinf(xRot) * cosf(zRot));
-	  rotMat[2][2] = cosf(xRot) * cosf(yRot);
-
-	  rotMat[3][3] = 1.0f;
-	  rotMat[0][0] = cosf(zRot);
-	  rotMat[0][1] = -sinf(zRot);
-	  rotMat[1][0] = sinf(zRot);
-	  rotMat[1][1] = cosf(zRot);*/
-
-	/*rotMat[0][0] = cosf(zRot);
-	  rotMat[0][2] = -sinf(zRot);
-	  rotMat[1][1] = 1.0f;
-	  rotMat[2][0] = sinf(zRot);
-	  rotMat[2][2] = cosf(zRot);
-	  rotMat[3][3] = 1.0f;
-	  float* rotMatPtr = rotMat[0];
-
-	  float xAmt = 0.0f;
-	  float yAmt = 0.0f;
-	  float zAmt = -1.f;
-	  float transMat[4][4] = {0.0f};
-	  transMat[0][0] = 1.0f;
-	  transMat[0][3] = xAmt;
-	  transMat[1][1] = 1.0f;
-	  transMat[1][3] = yAmt;
-	  transMat[2][2] = 1.0f;
-	  transMat[2][3] = zAmt;
-	  transMat[3][3] = 1.0f;
-	  float* transMatPtr = transMat[0];
-
-	  float vertices[] = {
-	  -5.0f, -5.0f, 0.0f,
-	  5.0f, -5.0f, 0.0f,
-	  -5.0f, 5.0f, 0.0f,
-	  5.0f, 5.0f, 0.0f
-	  };
-	//4.69846, -5, 0.7101
-	float t[] = {-4.69846f, -5.0f, -2.7101f};
-	std::cout << "ORIGINAL POINT: " << vertices[0] << ", " << vertices[1] <<
-	", " << vertices[2] << std::endl;
-	multiply(t, projMat);
-
-
-	int pointCount = sizeof(vertices) / sizeof(float);
-
-	cl::EnqueueArgs vertexArgs(queue, cl::NDRange(pointCount));
-
-	cl::Buffer vertexBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-	pointCount*sizeof(float), vertices, &err);
-	checkError(err, "VertexBuffer");
-
-	cl::Buffer vertexOutBuffer(context, CL_MEM_READ_WRITE,
-	pointCount*sizeof(float), NULL, &err);
-	checkError(err, "VertexOutBuffer");
-
-	cl::Buffer vertexScaleBuffer(context, CL_MEM_READ_WRITE,
-	pointCount*sizeof(float), NULL, &err);
-	checkError(err, "VertexScaleBuffer");
-
-	cl::Buffer vertexRotateBuffer(context, CL_MEM_READ_WRITE,
-	pointCount*sizeof(float), NULL, &err);
-	checkError(err, "VertexRotateBuffer");
-
-	cl::Buffer vertexTranslateBuffer(context, CL_MEM_READ_WRITE,
-	pointCount*sizeof(float), NULL, &err);
-	checkError(err, "VertexTranslateBuffer");
-
-	cl::Buffer pixelBuffer(context, CL_MEM_WRITE_ONLY,
-	SCREEN_WIDTH*SCREEN_HEIGHT*sizeof(int));
-	checkError(err, "PixelBuffer");
-
-	cl::Kernel submitVerticesKernel(pipelineProgram, "submitVertices", &err);
-	checkError(err, "SubmitVerticesKernel");
-	cl::KernelFunctor<> submitVertices(submitVerticesKernel);
-
-	err = submitVerticesKernel.setArg(0, sizeof(cl_mem), &vertexBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 0");
-
-	err = submitVerticesKernel.setArg(1, sizeof(cl_mem), &vertexOutBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 1");
-
-	err = submitVerticesKernel.setArg(2, sizeof(cl_mem), &pixelBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 2");
-
-	err = submitVerticesKernel.setArg(3, sizeof(int), &SCREEN_WIDTH);
-	checkError(err, "SubmitVerticesKernel Arg 3");
-
-	err = submitVerticesKernel.setArg(4, sizeof(int), &SCREEN_HEIGHT);
-	checkError(err, "SubmitVerticesKernel Arg 4");
-
-	err = submitVerticesKernel.setArg(5, sizeof(int), &pointCount);
-	checkError(err, "SubmitVerticesKernel Arg 5");
-
-	cl::Buffer projMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			16*sizeof(float), projMatPtr, &err);
-	checkError(err, "ProjMatBuffer");
-
-	err = submitVerticesKernel.setArg(6, sizeof(cl_mem), &projMatBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 6");
-
-	cl::Buffer scaleMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			16*sizeof(float), scaleMatPtr, &err);
-	checkError(err, "ScaleMatBuffer");
-
-	err = submitVerticesKernel.setArg(7, sizeof(cl_mem), &scaleMatBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 7");
-
-	cl::Buffer rotMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			16*sizeof(float), rotMatPtr, &err);
-	checkError(err, "RotMatBuffer");
-
-	err = submitVerticesKernel.setArg(8, sizeof(cl_mem), &rotMatBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 8");
-
-	cl::Buffer transMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			16*sizeof(float), transMatPtr, &err);
-	checkError(err, "TransMatBuffer");
-
-	err = submitVerticesKernel.setArg(9, sizeof(cl_mem), &transMatBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 9");
-
-	err = submitVerticesKernel.setArg(10, sizeof(cl_mem), &vertexScaleBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 10");
-
-	err = submitVerticesKernel.setArg(11, sizeof(cl_mem), &vertexRotateBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 11");
-
-	err = submitVerticesKernel.setArg(12, sizeof(cl_mem), &vertexTranslateBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 12");
-
-	submitVertices(vertexArgs);
-
-	int screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
-	queue.enqueueReadBuffer(pixelBuffer, CL_TRUE, 0,
-			SCREEN_WIDTH*SCREEN_HEIGHT*sizeof(int), screenBuffer);*/
-
-		/*cl::EnqueueArgs args(queue, cl::NDRange(3));
-
-		  int nums[] = {2, 2, 5, 4, 9, 9};
-		  int output[3];
-
-		  cl::Buffer numsBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-		  6*sizeof(int), nums, &err);
-		  checkError(err, "NumsBuffer");
-
-		  cl::Buffer outputBuffer(context, CL_MEM_WRITE_ONLY, 3*sizeof(int), NULL, &err);
-		  checkError(err, "OutputBuffer");
-
-		  cl::Kernel helloWorldKernel(pipelineProgram, "helloWorld", &err);
-		  checkError(err, "HelloWorldKernel");
-		  cl::KernelFunctor<> helloWorld(helloWorldKernel);
-
-		  err = helloWorldKernel.setArg(0, sizeof(cl_mem), &numsBuffer);
-		  checkError(err, "HelloWorldKernel Arg 0");
-
-		  err = helloWorldKernel.setArg(1, sizeof(cl_mem), &outputBuffer);
-		  checkError(err, "HelloWorldKernel Arg 1");
-
-		  helloWorld(args);
-
-		  queue.enqueueReadBuffer(outputBuffer, CL_TRUE, 0, 3*sizeof(int), output);
-
-		  std::cout << output[0] << ", " << output[1] << ", " << output[2] << std::endl;*/
-
-		SDL_Init(SDL_INIT_VIDEO);
+	SDL_Init(SDL_INIT_VIDEO);
 
 	SDL_Window* window = SDL_CreateWindow(
 			"OpenCL Graphics",
@@ -357,7 +157,7 @@ int main() {
 			SDL_WINDOWPOS_CENTERED,
 			SCREEN_WIDTH,
 			SCREEN_HEIGHT,
-			0);
+			SDL_WINDOW_RESIZABLE);
 
 	if (window == NULL) {
 		throw std::runtime_error("Failed to create window");
@@ -371,9 +171,31 @@ int main() {
 			SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
 	SDL_SetTextureBlendMode(screen, SDL_BLENDMODE_BLEND);
 
-
 	SDL_Event event;
 	int running = 1;
+
+	float projMat[16];
+	createProjMat(60.0f, 0.1f, 1000.0f, projMat);
+	float scaleMat[16];
+	createScaleMat(5.f, scaleMat);
+	float transMat[16];
+	createTransMat(0.0f, 0.0f, -15.0f, transMat);
+
+	float size = 1.0f;
+	float amt = 0.f;
+	float vertices[] = {
+		-size, size, size-amt,
+		size, -size, size-amt,
+		-size, -size, size-amt,
+		size, size, size-amt,
+		-size, size, -size-amt,
+		-size, -size, -size-amt,
+		size, size, -size-amt,
+		size, -size, -size-amt
+	};
+
+	int pointCount = sizeof(vertices) / sizeof(float);
+	cl::EnqueueArgs vertexArgs(queue, cl::NDRange(pointCount));
 
 	float rot = 0.0f;
 	while (running) {
@@ -381,87 +203,20 @@ int main() {
 			if (event.type == SDL_QUIT) {
 				running = 0;
 			}
+			if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+				SCREEN_WIDTH = event.window.data1;
+				SCREEN_HEIGHT = event.window.data2;
+				SDL_SetWindowSize(window, SCREEN_WIDTH, SCREEN_HEIGHT);
+				SDL_RenderSetViewport(renderer, NULL);
+				screen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+						SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+			}
 		}
-		/*float projMat[4][4] = {0.0f};
-		float fovRad = toRad(FOV/2.0f);
-		projMat[0][0] = (1.0f / tanf(fovRad));
-		projMat[1][1] = 1.0f / tanf(fovRad);
-		projMat[2][2] = ((-2.0f * 0.1f) / (1000.0f - 0.1f)) - 1.0f;
-		projMat[2][3] = (-0.1f * 1000.0f) / (1000.0f - 0.1f);
-		projMat[3][2] = -1.0f;
-		float* projMatPtr = projMat[0];*/
-
-		float projMat[16];
-		createProjMat(60.0f, 0.1f, 1000.0f, projMat);
-
-		float scaleMat[16];
-		createScaleMat(5.f, scaleMat);
-
-		/*float scaleAmt = 5.f;
-		float scaleMat[4][4] = {0.0f};
-		scaleMat[0][0] = scaleAmt;
-		scaleMat[1][1] = scaleAmt;
-		scaleMat[2][2] = scaleAmt;
-		scaleMat[3][3] = 1.0f;
-		float* scaleMatPtr = scaleMat[0];*/
 
 		float rotMat[16];
 		createRotMat(0.0f, rot, rot, rotMat);
 		rot += 0.5f;
 
-		/*float xRot = toRad(0.0f);
-		float yRot = toRad(y);
-		float zRot = toRad(y);
-		y += 0.5f;
-		float rotMat[4][4] = {0.0f};
-		rotMat[0][0] = cosf(yRot) * cosf(zRot);
-		rotMat[0][1] = cosf(yRot) * sinf(zRot);
-		rotMat[0][2] = -sinf(yRot);
-
-		rotMat[1][0] = (sinf(xRot) * sinf(yRot) * cosf(zRot)) -
-			(cosf(xRot) * sinf(zRot));
-		rotMat[1][1] = (sinf(xRot) * sinf(yRot) * sinf(zRot)) +
-			(cosf(xRot) * cosf(zRot));
-		rotMat[1][2] = sinf(xRot) * cosf(yRot);
-
-		rotMat[2][0] = (cosf(xRot) * sinf(yRot) * cosf(zRot)) +
-			(sinf(xRot) * sinf(zRot));
-		rotMat[2][1] = (cosf(xRot) * sinf(yRot) * sinf(zRot)) -
-			(sinf(xRot) * cosf(zRot));
-		rotMat[2][2] = cosf(xRot) * cosf(yRot);
-		float* rotMatPtr = rotMat[0];*/
-
-		float transMat[16];
-		createTransMat(0.0f, 0.0f, -15.0f, transMat);
-		/*float xAmt = 0.0f;
-		float yAmt = 0.0f;
-		float zAmt = -15.0f;
-		float transMat[4][4] = {0.0f};
-		transMat[0][0] = 1.0f;
-		transMat[0][3] = xAmt;
-		transMat[1][1] = 1.0f;
-		transMat[1][3] = yAmt;
-		transMat[2][2] = 1.0f;
-		transMat[2][3] = zAmt;
-		transMat[3][3] = 1.0f;
-		float* transMatPtr = transMat[0];*/
-
-		float size = 1.0f;
-		float amt = 0.f;
-		float vertices[] = {
-			-size, size, size-amt,
-			size, -size, size-amt,
-			-size, -size, size-amt,
-			size, size, size-amt,
-			-size, size, -size-amt,
-			-size, -size, -size-amt,
-			size, size, -size-amt,
-			size, -size, -size-amt
-		};
-
-		int pointCount = sizeof(vertices) / sizeof(float);
-
-		cl::EnqueueArgs vertexArgs(queue, cl::NDRange(pointCount));
 
 		cl::Buffer vertexBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
 				pointCount*sizeof(float), vertices, &err);
@@ -500,6 +255,7 @@ int main() {
 		err = submitVerticesKernel.setArg(2, sizeof(cl_mem), &pixelBuffer);
 		checkError(err, "SubmitVerticesKernel Arg 2");
 
+		//std::cout << SCREEN_WIDTH << ", " << SCREEN_HEIGHT << std::endl;
 		err = submitVerticesKernel.setArg(3, sizeof(int), &SCREEN_WIDTH);
 		checkError(err, "SubmitVerticesKernel Arg 3");
 

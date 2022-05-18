@@ -172,12 +172,12 @@ __kernel void submitVertices(__global float* input, __global float* output,
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	if ( i == 0) {
-		printf("INPUT: (%f, %f, %f)\n", input[0], input[1], input[2]);
-		printf("GPU Scaled: (%f, %f, %f)\n", scaled[0], scaled[1], scaled[2]);
-		printf("GPU Rotated: (%f, %f, %f)\n", rotated[0], rotated[1], rotated[2]);
-		printf("GPU Translated: (%f, %f, %f)\n",
-				 translated[0], translated[1], translated[2]);
-		printf("GPU Projected: (%f, %f, %f)\n", output[0], output[1], output[2]);
+		//printf("INPUT: (%f, %f, %f)\n", input[0], input[1], input[2]);
+		//printf("GPU Scaled: (%f, %f, %f)\n", scaled[0], scaled[1], scaled[2]);
+		//printf("GPU Rotated: (%f, %f, %f)\n", rotated[0], rotated[1], rotated[2]);
+		//printf("GPU Translated: (%f, %f, %f)\n",
+		//		 translated[0], translated[1], translated[2]);
+		//printf("GPU Projected: (%f, %f, %f)\n", output[0], output[1], output[2]);
 	}
 
 
