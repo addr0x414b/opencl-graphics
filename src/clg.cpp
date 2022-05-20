@@ -2,7 +2,7 @@
 
 #include <fstream>
 #include <iostream>
-#include <unistd.h>
+#include <math.h>
 
 
 clg::clg(int sWidth, int sHeight) {
@@ -30,10 +30,6 @@ clg::clg(int sWidth, int sHeight) {
 	std::string pipelineSrc(std::istreambuf_iterator<char>(pipelineFile),
 			(std::istreambuf_iterator<char>()));
 
-	char buffer[100];
-	getcwd(buffer, sizeof(buffer));
-	std::cout << buffer << std::endl;
-
 	cl::Program p(context, pipelineSrc.c_str(), CL_TRUE, &err);
 	checkError(err, "Pipeline program creation");
 	pipelineProgram = p;
@@ -41,6 +37,11 @@ clg::clg(int sWidth, int sHeight) {
 	cl::CommandQueue q(context, device, 0, &err);
 	checkError(err, "Queue creation");
 	queue = q;
+
+	cl::Buffer s(context, CL_MEM_WRITE_ONLY,
+			screenWidth*screenHeight*sizeof(int), NULL, &err);
+	checkError(err, "ScreenBuf creation");
+	screenBuf = s;
 }
 
 void clg::checkError(cl_int err, std::string location) {
@@ -64,8 +65,7 @@ void clg::drawWireframeDots(
 		float* vertices, int attrCount, int tCount,
 		int lR, int lG, int lB, int lThickness,
 		int dR, int dG, int dB, int dThickness,
-		float* scaleMat, float* rotMat, float* transMat, float* projMat,
-		int* screenBuffer) {
+		float* scaleMat, float* rotMat, float* transMat, float* projMat) {
 
 	cl::EnqueueArgs args(queue, cl::NDRange(tCount));
 
@@ -147,9 +147,6 @@ void clg::drawWireframeDots(
 	err = drawWireframeDotsKernel.setArg(12, sizeof(cl_mem), &transOutBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 12 (transOut)");
 
-	cl::Buffer screenBuf(context, CL_MEM_WRITE_ONLY,
-			screenWidth*screenHeight*sizeof(int));
-	checkError(err, "ScreenBuf creation");
 	err = drawWireframeDotsKernel.setArg(13, sizeof(cl_mem), &screenBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 13 (screen)");
 
@@ -160,84 +157,6 @@ void clg::drawWireframeDots(
 	checkError(err, "DrawWireframeDotsKernel Arg 15 (screenHeight)");
 
 	drawWireframeDots(args);
-	queue.enqueueReadBuffer(screenBuf, CL_TRUE, 0,
-			screenWidth*screenHeight*sizeof(int), screenBuffer);
-
-	/*cl::Buffer vertexScaleBuffer(context, CL_MEM_READ_WRITE,
-			pointCount*sizeof(float), NULL, &err);
-	checkError(err, "VertexScaleBuffer");
-
-	cl::Buffer vertexRotateBuffer(context, CL_MEM_READ_WRITE,
-			pointCount*sizeof(float), NULL, &err);
-	checkError(err, "VertexRotateBuffer");
-
-	cl::Buffer vertexTranslateBuffer(context, CL_MEM_READ_WRITE,
-			pointCount*sizeof(float), NULL, &err);
-	checkError(err, "VertexTranslateBuffer");
-
-	cl::Buffer pixelBuffer(context, CL_MEM_WRITE_ONLY,
-			SCREEN_WIDTH*SCREEN_HEIGHT*sizeof(int));
-	checkError(err, "PixelBuffer");
-
-
-	err = submitVerticesKernel.setArg(1, sizeof(cl_mem), &vertexOutBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 1");
-
-	err = submitVerticesKernel.setArg(2, sizeof(cl_mem), &pixelBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 2");
-
-	//std::cout << SCREEN_WIDTH << ", " << SCREEN_HEIGHT << std::endl;
-	err = submitVerticesKernel.setArg(3, sizeof(int), &SCREEN_WIDTH);
-	checkError(err, "SubmitVerticesKernel Arg 3");
-
-	err = submitVerticesKernel.setArg(4, sizeof(int), &SCREEN_HEIGHT);
-	checkError(err, "SubmitVerticesKernel Arg 4");
-
-	err = submitVerticesKernel.setArg(5, sizeof(int), &pointCount);
-	checkError(err, "SubmitVerticesKernel Arg 5");
-
-	cl::Buffer projMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			16*sizeof(float), projMat, &err);
-	checkError(err, "ProjMatBuffer");
-
-	err = submitVerticesKernel.setArg(6, sizeof(cl_mem), &projMatBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 6");
-
-	cl::Buffer scaleMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			16*sizeof(float), scaleMat, &err);
-	checkError(err, "ScaleMatBuffer");
-
-	err = submitVerticesKernel.setArg(7, sizeof(cl_mem), &scaleMatBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 7");
-
-	cl::Buffer rotMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			16*sizeof(float), rotMat, &err);
-	checkError(err, "RotMatBuffer");
-
-	err = submitVerticesKernel.setArg(8, sizeof(cl_mem), &rotMatBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 8");
-
-	cl::Buffer transMatBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			16*sizeof(float), transMat, &err);
-	checkError(err, "TransMatBuffer");
-
-	err = submitVerticesKernel.setArg(9, sizeof(cl_mem), &transMatBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 9");
-
-	err = submitVerticesKernel.setArg(10, sizeof(cl_mem), &vertexScaleBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 10");
-
-	err = submitVerticesKernel.setArg(11, sizeof(cl_mem), &vertexRotateBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 11");
-
-	err = submitVerticesKernel.setArg(12, sizeof(cl_mem), &vertexTranslateBuffer);
-	checkError(err, "SubmitVerticesKernel Arg 12");
-
-	submitVertices(vertexArgs);
-
-	int screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
-	queue.enqueueReadBuffer(pixelBuffer, CL_TRUE, 0,
-			SCREEN_WIDTH*SCREEN_HEIGHT*sizeof(int), screenBuffer);*/
 }
 
 /* Set the screen size. Useful when updating the screen resolution
@@ -245,4 +164,139 @@ void clg::drawWireframeDots(
 void clg::setScreenWidthHeight(int sWidth, int sHeight) {
 	screenWidth = sWidth;
 	screenHeight = sHeight;
+}
+
+/* Update the screen contents with whatever is inside the screenBuf
+ * @param screen: array of size screenWidth * screenHeight */
+void clg::updateScreen(int* screen) {
+	queue.enqueueReadBuffer(screenBuf, CL_TRUE, 0,
+			screenWidth*screenHeight*sizeof(int), screen);
+	cl::Buffer s(context, CL_MEM_WRITE_ONLY,
+			screenWidth*screenHeight*sizeof(int), NULL, &err);
+	checkError(err, "ScreenBuf re-creation");
+	screenBuf = s;
+}
+
+/* Convert degrees to radians
+ * @param n: degrees */
+float toRad(float n) {
+	return n * (3.141592f / 180.0f);
+}
+
+/* Create a projection matrix
+ * @param fov: field of view
+ * @params zNear, zFar: z near and far clipping planes
+ * @param m: size 16 array */
+void createProjMat(float fov, float zNear, float zFar, float* m) {
+	float fovRad = toRad(fov/2.0f);
+
+	m[0] = (1.0f / tanf(fovRad));
+	m[1] = 0.0f;
+	m[2] = 0.0f;
+	m[3] = 0.0f;
+
+	m[4] = 0.0f;
+	m[5] = (1.0f / tanf(fovRad));
+	m[6] = 0.0f;
+	m[7] = 0.0f;
+
+	m[8] = 0.0f;
+	m[9] = 0.0f;
+	m[10] = ((-2.0f * zNear) / (zFar - zNear)) - 1.0f;
+	m[11] = (-zNear * zFar) / (zFar - zNear);
+
+	m[12] = 0.0f;
+	m[13] = 0.0f;
+	m[14] = -1.0f;
+	m[15] = 0.0f;
+
+}
+
+/* Create a scale matrix
+ * @param amt: amount to scale
+ * @param m: size 16 array to output */
+void createScaleMat(float amt, float* m) {
+
+	m[0] = amt;
+	m[1] = 0.0f;
+	m[2] = 0.0f;
+	m[3] = 0.0f;
+
+	m[4] = 0.0f;
+	m[5] = amt;
+	m[6] = 0.0f;
+	m[7] = 0.0f;
+
+	m[8] = 0.0f;
+	m[9] = 0.0f;
+	m[10] = amt;
+	m[11] = 0.0f;
+
+	m[12] = 0.0f;
+	m[13] = 0.0f;
+	m[14] = 0.0f;
+	m[15] = 1.0f;
+
+}
+
+/* Create a rotation matrix
+ * @params x, y, z: amount to rotate (in degrees) in the x, y, and z direction
+ * @param m: size 16 array to output */
+void createRotMat(float x, float y, float z, float* m) {
+
+	float xRot = toRad(x);
+	float yRot = toRad(y);
+	float zRot = toRad(z);
+
+	m[0] = cosf(yRot) * cosf(zRot);
+	m[1] = cosf(yRot) * sinf(zRot);
+	m[2] = -sinf(yRot);
+	m[3] = 0.0f;
+
+	m[4] = (sinf(xRot) * sinf(yRot) * cosf(zRot)) -
+			(cosf(xRot) * sinf(zRot));
+	m[5] = (sinf(xRot) * sinf(yRot) * sinf(zRot)) +
+			(cosf(xRot) * cosf(zRot));
+	m[6] = sinf(xRot) * cosf(yRot);
+	m[7] = 0.0f;
+
+	m[8] = (cosf(xRot) * sinf(yRot) * cosf(zRot)) +
+			(sinf(xRot) * sinf(zRot));
+	m[9] = (cosf(xRot) * sinf(yRot) * sinf(zRot)) -
+			(sinf(xRot) * cosf(zRot));
+	m[10] = cosf(xRot) * cosf(yRot);
+	m[11] = 0.0f;
+
+	m[12] = 0.0f;
+	m[13] = 0.0f;
+	m[14] = 0.0f;
+	m[15] = 0.0f;
+
+}
+
+/* Create a transformation matrix
+ * @params x, y, z: amount to translate in the x, y, and z direction
+ * @param m: size 16 array to ouput */
+void createTransMat(float x, float y, float z, float* m) {
+
+	m[0] = 1.0f;
+	m[1] = 0.0f;
+	m[2] = 0.0f;
+	m[3] = x;
+
+	m[4] = 0.0f;
+	m[5] = 1.0f;
+	m[6] = 0.0f;
+	m[7] = y;
+
+	m[8] = 0.0f;
+	m[9] = 0.0f;
+	m[10] = 1.0f;
+	m[11] = z;
+
+	m[12] = 0.0f;
+	m[13] = 0.0f;
+	m[14] = 0.0f;
+	m[15] = 1.0f;
+
 }

@@ -185,16 +185,6 @@ __kernel void drawWireframeDots(
 	multiply(transOut, output, projMat);
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
-	if ( i == 0) {
-		printf("INPUT: (%f, %f, %f)\n", input[0], input[1], input[2]);
-		printf("GPU Scaled: (%f, %f, %f)\n", scaledOut[0], scaledOut[1], scaledOut[2]);
-		printf("GPU Rotated: (%f, %f, %f)\n", rotOut[0], rotOut[1], rotOut[2]);
-		printf("GPU Translated: (%f, %f, %f)\n",
-				 transOut[0], transOut[1], transOut[2]);
-		printf("GPU Projected: (%f, %f, %f)\n", output[0], output[1], output[2]);
-	}
-
-
 	centerPoints(output, output, screenWidth, screenHeight);
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
