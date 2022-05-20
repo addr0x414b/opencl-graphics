@@ -1,6 +1,7 @@
 #define CL_HPP_TARGET_OPENCL_VERSION 300
 #include <CL/opencl.hpp>
 #include <SDL2/SDL.h>
+#include "src/clg.hpp"
 
 #include <vector>
 #include <iostream>
@@ -126,7 +127,10 @@ void createTransMat(float x, float y, float z, float* m) {
 }
 
 int main() {
-	cl::Platform platform = cl::Platform::get();
+
+	clg clg(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	/*cl::Platform platform = cl::Platform::get();
 	std::vector<cl::Device> devices;
 	platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
 	cl::Device device = devices.front();
@@ -147,7 +151,7 @@ int main() {
 	checkError(err, "PipelineProgram");
 
 	cl::CommandQueue queue(context, device, 0, &err);
-	checkError(err, "Queue");
+	checkError(err, "Queue");*/
 
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -181,21 +185,58 @@ int main() {
 	float transMat[16];
 	createTransMat(0.0f, 0.0f, -15.0f, transMat);
 
-	float size = 1.0f;
-	float amt = 0.f;
-	float vertices[] = {
-		-size, size, size-amt,
-		size, -size, size-amt,
-		-size, -size, size-amt,
-		size, size, size-amt,
-		-size, size, -size-amt,
-		-size, -size, -size-amt,
-		size, size, -size-amt,
-		size, -size, -size-amt
+	float vertices[] {
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f,
+
+		1.0f, -1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+
+		-1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, -1.0f,
+
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
+
+		1.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f,
+
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, -1.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f,
+
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+
+		-1.0f, 1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		1.0f, 1.0f, -1.0f,
+
+		1.0f, 1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, 1.0f,
+
+		1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
 	};
 
 	int pointCount = sizeof(vertices) / sizeof(float);
-	cl::EnqueueArgs vertexArgs(queue, cl::NDRange(pointCount));
+	//cl::EnqueueArgs vertexArgs(queue, cl::NDRange(pointCount));
 
 	float rot = 0.0f;
 	while (running) {
@@ -206,6 +247,7 @@ int main() {
 			if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
 				SCREEN_WIDTH = event.window.data1;
 				SCREEN_HEIGHT = event.window.data2;
+				clg.setScreenWidthHeight(SCREEN_WIDTH, SCREEN_HEIGHT);
 				SDL_SetWindowSize(window, SCREEN_WIDTH, SCREEN_HEIGHT);
 				SDL_RenderSetViewport(renderer, NULL);
 				screen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
@@ -217,8 +259,11 @@ int main() {
 		createRotMat(0.0f, rot, rot, rotMat);
 		rot += 0.5f;
 
+		int screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
+		clg.drawWireframeDots(vertices, 3, pointCount, 255, 0, 0, 0,
+				255, 255, 255, 5, scaleMat, rotMat, transMat, projMat, screenBuffer);
 
-		cl::Buffer vertexBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+		/*cl::Buffer vertexBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
 				pointCount*sizeof(float), vertices, &err);
 		checkError(err, "VertexBuffer");
 
@@ -306,7 +351,7 @@ int main() {
 
 		int screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
 		queue.enqueueReadBuffer(pixelBuffer, CL_TRUE, 0,
-				SCREEN_WIDTH*SCREEN_HEIGHT*sizeof(int), screenBuffer);
+				SCREEN_WIDTH*SCREEN_HEIGHT*sizeof(int), screenBuffer);*/
 
 		SDL_UpdateTexture(screen, NULL, screenBuffer, SCREEN_WIDTH*sizeof(int));
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);

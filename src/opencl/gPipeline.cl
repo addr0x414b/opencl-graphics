@@ -161,6 +161,49 @@ void multiply(float* input, float* output, float* m) {
 	}
 }
 
+__kernel void drawWireframeDots(
+		__global float* input, __global float* output,
+		int attrCount, int tCount,
+		__global int* lineParams, __global int* dotParams,
+		__global float* scaleMat, __global float* rotMat,
+		__global float* transMat, __global float* projMat,
+		__global float* scaledOut, __global float* rotOut,
+		__global float* transOut,
+		__global int* screen, int screenWidth, int screenHeight) {
+
+	int i = get_global_id(0);
+
+	multiply(input, scaledOut, scaleMat);
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	multiply(scaledOut, rotOut, rotMat);
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	multiply(rotOut, transOut, transMat);
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	multiply(transOut, output, projMat);
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	if ( i == 0) {
+		printf("INPUT: (%f, %f, %f)\n", input[0], input[1], input[2]);
+		printf("GPU Scaled: (%f, %f, %f)\n", scaledOut[0], scaledOut[1], scaledOut[2]);
+		printf("GPU Rotated: (%f, %f, %f)\n", rotOut[0], rotOut[1], rotOut[2]);
+		printf("GPU Translated: (%f, %f, %f)\n",
+				 transOut[0], transOut[1], transOut[2]);
+		printf("GPU Projected: (%f, %f, %f)\n", output[0], output[1], output[2]);
+	}
+
+
+	centerPoints(output, output, screenWidth, screenHeight);
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	drawTrigs(output, screen, screenWidth, screenHeight, tCount);
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	drawPoints(output, screen, screenWidth, screenHeight);
+}
+
 __kernel void submitVertices(__global float* input, __global float* output,
 		__global int* screen, int screenWidth,
 		int screenHeight, int pointCount, __global float* projMat,
