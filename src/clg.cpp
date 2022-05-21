@@ -4,7 +4,8 @@
 #include <iostream>
 #include <math.h>
 
-
+/* Default constructor - create the OpenCL graphics object
+ * @params sWidth, sHeight: screen width and height */
 clg::clg(int sWidth, int sHeight) {
 
 	screenWidth = sWidth;
@@ -51,21 +52,22 @@ void clg::checkError(cl_int err, std::string location) {
 	}
 }
 
-/* Render triangles in a wireframe mode with dots at each point
+/* Draw triangles to screen buffer in a wireframe mode with or without
+ * dots at each point
  * @param vertices: array of the vertices
  * @param attrCount: number of items combined for each attribute
  * @param tCount: total number in vertices
  * @params lR, lG, lB: line red, green, blue values 0-255,
- * @param lThickness: line thickness
  * @params dR, dG, dB: dot red, green, blue values 0-255,
  * @param dThickness: dot thickness,
- * @params scaleMat, rotMat, transMat, projMat: vertex matrices,
- * @param screenBuffer: array to output pixels */
+ * @params scaleMat, rotMat, transMat, projMat: vertex matrices
+ * @param drawDots: whether or not you want dots to be drawn at each point*/
 void clg::drawWireframeDots(
 		float* vertices, int attrCount, int tCount,
-		int lR, int lG, int lB, int lThickness,
+		int lR, int lG, int lB,
 		int dR, int dG, int dB, int dThickness,
-		float* scaleMat, float* rotMat, float* transMat, float* projMat) {
+		float* scaleMat, float* rotMat, float* transMat, float* viewMat,
+		float* projMat, bool drawDots) {
 
 	cl::EnqueueArgs args(queue, cl::NDRange(tCount));
 
@@ -91,7 +93,7 @@ void clg::drawWireframeDots(
 	err = drawWireframeDotsKernel.setArg(3, sizeof(int), &tCount);
 	checkError(err, "DrawWireframeDotsKernel Arg 3 (tCount)");
 
-	int lineP[] = { lR, lG, lB, lThickness };
+	int lineP[] = { lR, lG, lB};
 	cl::Buffer lineParams(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
 			4*sizeof(int), lineP, &err);
 	checkError(err, "LineParams creation");
@@ -123,38 +125,59 @@ void clg::drawWireframeDots(
 	err = drawWireframeDotsKernel.setArg(8, sizeof(cl_mem), &transMatBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 8 (transMat)");
 
+	cl::Buffer viewMatBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			16*sizeof(float), viewMat, &err);
+	checkError(err, "ViewMatBuf creation");
+	err = drawWireframeDotsKernel.setArg(9, sizeof(cl_mem), &viewMatBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 9 (viewMat)");
+
 	cl::Buffer projMatBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
 			16*sizeof(float), projMat, &err);
 	checkError(err, "ProjmatBuf creation");
-	err = drawWireframeDotsKernel.setArg(9, sizeof(cl_mem), &projMatBuf);
-	checkError(err, "DrawWireframeDotsKernel Arg 9 (projMat)");
+	err = drawWireframeDotsKernel.setArg(10, sizeof(cl_mem), &projMatBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 10 (projMat)");
 
 	cl::Buffer scaledOutBuf(context, CL_MEM_READ_WRITE,
 			tCount*sizeof(float), NULL, &err);
 	checkError(err, "ScaledOutBuf creation");
-	err = drawWireframeDotsKernel.setArg(10, sizeof(cl_mem), &scaledOutBuf);
-	checkError(err, "DrawWireframeDotsKernel Arg 10 (scaledOut)");
+	err = drawWireframeDotsKernel.setArg(11, sizeof(cl_mem), &scaledOutBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 11 (scaledOut)");
 
 	cl::Buffer rotOutBuf(context, CL_MEM_READ_WRITE,
 			tCount*sizeof(float), NULL, &err);
 	checkError(err, "RotOutBuf creation");
-	err = drawWireframeDotsKernel.setArg(11, sizeof(cl_mem), &rotOutBuf);
-	checkError(err, "DrawWireframeDotsKernel Arg 11 (rotOut)");
+	err = drawWireframeDotsKernel.setArg(12, sizeof(cl_mem), &rotOutBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 12 (rotOut)");
 
 	cl::Buffer transOutBuf(context, CL_MEM_READ_WRITE,
 			tCount*sizeof(float), NULL, &err);
 	checkError(err, "TransOutBuf creation");
-	err = drawWireframeDotsKernel.setArg(12, sizeof(cl_mem), &transOutBuf);
-	checkError(err, "DrawWireframeDotsKernel Arg 12 (transOut)");
+	err = drawWireframeDotsKernel.setArg(13, sizeof(cl_mem), &transOutBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 13 (transOut)");
 
-	err = drawWireframeDotsKernel.setArg(13, sizeof(cl_mem), &screenBuf);
-	checkError(err, "DrawWireframeDotsKernel Arg 13 (screen)");
+	cl::Buffer viewOutBuf(context, CL_MEM_READ_WRITE,
+			tCount*sizeof(float), NULL, &err);
+	checkError(err, "ViewOutBuf creation");
+	err = drawWireframeDotsKernel.setArg(14, sizeof(cl_mem), &viewOutBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 14 (viewOut)");
 
-	err = drawWireframeDotsKernel.setArg(14, sizeof(int), &screenWidth);
-	checkError(err, "DrawWireframeDotsKernel Arg 14 (screenWidth)");
+	err = drawWireframeDotsKernel.setArg(15, sizeof(cl_mem), &screenBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 15 (screen)");
 
-	err = drawWireframeDotsKernel.setArg(15, sizeof(int), &screenHeight);
-	checkError(err, "DrawWireframeDotsKernel Arg 15 (screenHeight)");
+	err = drawWireframeDotsKernel.setArg(16, sizeof(int), &screenWidth);
+	checkError(err, "DrawWireframeDotsKernel Arg 16 (screenWidth)");
+
+	err = drawWireframeDotsKernel.setArg(17, sizeof(int), &screenHeight);
+	checkError(err, "DrawWireframeDotsKernel Arg 17 (screenHeight)");
+
+	int dots = 0;
+
+	if (drawDots == true) {
+		dots = 1;
+	}
+
+	err = drawWireframeDotsKernel.setArg(18, sizeof(int), &dots);
+	checkError(err, "DrawWireframeDotsKernel Arg 18 (dots)");
 
 	drawWireframeDots(args);
 }
@@ -169,8 +192,10 @@ void clg::setScreenWidthHeight(int sWidth, int sHeight) {
 /* Update the screen contents with whatever is inside the screenBuf
  * @param screen: array of size screenWidth * screenHeight */
 void clg::updateScreen(int* screen) {
-	queue.enqueueReadBuffer(screenBuf, CL_TRUE, 0,
-			screenWidth*screenHeight*sizeof(int), screen);
+	if (screen != NULL) {
+		queue.enqueueReadBuffer(screenBuf, CL_TRUE, 0,
+				screenWidth*screenHeight*sizeof(int), screen);
+	}
 	cl::Buffer s(context, CL_MEM_WRITE_ONLY,
 			screenWidth*screenHeight*sizeof(int), NULL, &err);
 	checkError(err, "ScreenBuf re-creation");
@@ -209,14 +234,12 @@ void createProjMat(float fov, float zNear, float zFar, float* m) {
 	m[13] = 0.0f;
 	m[14] = -1.0f;
 	m[15] = 0.0f;
-
 }
 
 /* Create a scale matrix
  * @param amt: amount to scale
  * @param m: size 16 array to output */
 void createScaleMat(float amt, float* m) {
-
 	m[0] = amt;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -236,14 +259,12 @@ void createScaleMat(float amt, float* m) {
 	m[13] = 0.0f;
 	m[14] = 0.0f;
 	m[15] = 1.0f;
-
 }
 
 /* Create a rotation matrix
  * @params x, y, z: amount to rotate (in degrees) in the x, y, and z direction
  * @param m: size 16 array to output */
 void createRotMat(float x, float y, float z, float* m) {
-
 	float xRot = toRad(x);
 	float yRot = toRad(y);
 	float zRot = toRad(z);
@@ -271,14 +292,12 @@ void createRotMat(float x, float y, float z, float* m) {
 	m[13] = 0.0f;
 	m[14] = 0.0f;
 	m[15] = 0.0f;
-
 }
 
 /* Create a transformation matrix
  * @params x, y, z: amount to translate in the x, y, and z direction
  * @param m: size 16 array to ouput */
 void createTransMat(float x, float y, float z, float* m) {
-
 	m[0] = 1.0f;
 	m[1] = 0.0f;
 	m[2] = 0.0f;
@@ -298,5 +317,4 @@ void createTransMat(float x, float y, float z, float* m) {
 	m[13] = 0.0f;
 	m[14] = 0.0f;
 	m[15] = 1.0f;
-
 }

@@ -21,25 +21,26 @@ class clg {
 		void checkError(cl_int err, std::string location);
 
 	public:
-		/* Defaul constructor - create the OpenCL graphics object
+		/* Default constructor - create the OpenCL graphics object
 		 * @params sWidth, sHeight: screen width and height */
 		clg(int sWidth, int sHeight);
 
-		/* Render triangles in a wireframe mode with dots at each point
+		/* Draw triangles to screen buffer in a wireframe mode with or without
+		 * dots at each point
 		 * @param vertices: array of the vertices
 		 * @param attrCount: number of items combined for each attribute
 		 * @param tCount: total number in vertices
 		 * @params lR, lG, lB: line red, green, blue values 0-255,
-		 * @param lThickness: line thickness
 		 * @params dR, dG, dB: dot red, green, blue values 0-255,
 		 * @param dThickness: dot thickness,
-		 * @params scaleMat, rotMat, transMat, projMat: vertex matrices,
-		 * @param screenBuffer: array to output pixels */
+		 * @params scaleMat, rotMat, transMat, projMat: vertex matrices
+		 * @param drawDots: whether or not you want dots to be drawn at each point*/
 		void drawWireframeDots(
 				float* vertices, int attrCount, int tCount,
-				int lR, int lG, int lB, int lThickness,
+				int lR, int lG, int lB,
 				int dR, int dG, int dB, int dThickness,
-				float* scaleMat, float* rotMat, float* transMat, float* projMat);
+				float* scaleMat, float* rotMat, float* transMat, float* viewMat,
+				float* projMat, bool drawDots);
 
 		/* Update the screen contents with whatever is inside the screenBuf
 		 * @param screen: array of size screenWidth * screenHeight */
