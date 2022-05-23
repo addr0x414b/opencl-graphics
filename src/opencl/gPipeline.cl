@@ -102,11 +102,11 @@ void centerPoints(float* input, float* output, int screenWidth,
 	int i = get_global_id(0);
 
 	if (i % attrCount == 0) {
-		output[i] = input[i] * 150.0f;
+		output[i] = input[i] * 1920.0f/4.0f;
 		output[i] += (float)screenWidth / 2.0f;
 	}
 	if (i % attrCount == 1) {
-		output[i] = -input[i] * 150.0f;
+		output[i] = -input[i] * 1920.0f/4.0f;
 		output[i] += (float)screenHeight / 2.0f;
 	}
 
