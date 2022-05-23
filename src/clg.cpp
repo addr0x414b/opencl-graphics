@@ -45,6 +45,9 @@ clg::clg(int sWidth, int sHeight) {
 	screenBuf = s;
 }
 
+/* Check an OpenCL Error code
+ * @param err: OpenCL output error
+ * @param location: a string specifying where the error occurred */
 void clg::checkError(cl_int err, std::string location) {
 	if (err != 0) {
 		throw std::runtime_error("Error caught at " + location + ": " +
@@ -317,4 +320,100 @@ void createTransMat(float x, float y, float z, float* m) {
 	m[13] = 0.0f;
 	m[14] = 0.0f;
 	m[15] = 1.0f;
+}
+
+/* Create a lookat matrix
+ * @param pos: camera position
+ * @param target: camera look at target
+ * @param up: camera up vector
+ * @param m: size 16 array to output */
+void createLookAtMat(vec3 pos, vec3 target, vec3 up, float* m) {
+	vec3 zaxis = normalize(subVec(target, pos));
+	vec3 xaxis = normalize(crossVec(zaxis, up));
+	vec3 yaxis = crossVec(xaxis, zaxis);
+
+	zaxis.x = -zaxis.x;
+	zaxis.y = -zaxis.y;
+	zaxis.z = -zaxis.z;
+
+	m[0] = xaxis.x;
+	m[1] = xaxis.y;
+	m[2] = xaxis.z;
+	m[3] = -dotVec(xaxis, pos);
+
+	m[4] = yaxis.x;
+	m[5] = yaxis.y;
+	m[6] = yaxis.z;
+	m[7] = -dotVec(yaxis, pos);
+
+	m[8] = zaxis.x;
+	m[9] = zaxis.y;
+	m[10] = zaxis.z;
+	m[11] = -dotVec(zaxis, pos);
+
+	m[12] = 0.0f;
+	m[13] = 0.0f;
+	m[14] = 0.0f;
+	m[15] = 1.0f;
+}
+
+/* Subtract two vector 3s. Performs a - b
+ * @params a, b: vec 3s */
+vec3 subVec(vec3 a, vec3 b) {
+	vec3 ans;
+	ans.x = a.x - b.x;
+	ans.y = a.y - b.y;
+	ans.z = a.z - b.z;
+	return ans;
+}
+
+/* Perform the dot product between two vector 3s
+ * @params a, b: vec 3s
+ * @return: float dot product */
+float dotVec(vec3 a, vec3 b) {
+	return (a.x*b.x) + (a.y*b.y) + (a.z*b.z);
+}
+
+/* Normalize a vector 3
+ * @param a: vec 3 input
+ * @return: vec3 normalized output */
+vec3 normalize(vec3 a) {
+	vec3 ans;
+	float l = sqrtf(dotVec(a, a));
+	ans.x = a.x / l;
+	ans.y = a.y / l;
+	ans.z = a.z / l;
+	return ans;
+}
+
+/* Calculate cross product between two vector 3s
+ * @params a, b: vec3 inputs
+ * @return: vec3 cross product result */
+vec3 crossVec(vec3 a, vec3 b) {
+	vec3 ans;
+	ans.x = (a.y * b.z) - (a.z * b.y);
+	ans.y = (a.z * b.x) - (a.x * b.z);
+	ans.z = (a.x * b.y) - (a.y * b.x);
+	return ans;
+}
+
+/* Multiply a vector 3 by a matrix
+ * @param a: vec3 input
+ * @param m: size 16 array to multiply by
+ * @return: vec3 result */
+vec3 multiplyVec(vec3 a, float* m) {
+	vec3 ans;
+
+	ans.x = (a.x * m[0]) + (a.y * m[1]) + (a.z * m[2]) + m[3];
+	ans.y = (a.x * m[4]) + (a.y * m[5]) + (a.z * m[6]) + m[7];
+	ans.z = (a.x * m[8]) + (a.y * m[9]) + (a.z * m[10]) + m[11];
+	float w = (a.x * m[12]) + (a.y * m[13]) + (a.z * m[14]) + m[15];
+
+	if (w != 0.0f) {
+		ans.x /= w;
+		ans.y /= w;
+		ans.z /= w;
+	}
+
+	return ans;
 }

@@ -5,6 +5,21 @@
 
 #include <vector>
 
+struct vec3 {
+	float x, y, z;
+	vec3() {
+		x = 0.0f;
+		y = 0.0f;
+		z = 0.0f;
+	}
+	vec3(float xx, float yy, float zz) {
+		x = xx;
+		y = yy;
+		z = zz;
+	}
+};
+
+/* OpenCL graphics class, contains boilerplate for OpenCL */
 class clg {
 	private:
 		cl::Platform platform;
@@ -18,6 +33,9 @@ class clg {
 		int screenWidth;
 		int screenHeight;
 
+		/* Check an OpenCL Error code
+		 * @param err: OpenCL output error
+		 * @param location: a string specifying where the error occurred */
 		void checkError(cl_int err, std::string location);
 
 	public:
@@ -75,3 +93,36 @@ void createRotMat(float x, float y, float z, float* m);
  * @params x, y, z: amount to translate in the x, y, and z direction
  * @param m: size 16 array to ouput */
 void createTransMat(float x, float y, float z, float* m);
+
+/* Create a lookat matrix
+ * @param pos: camera position
+ * @param target: camera look at target
+ * @param up: camera up vector
+ * @param m: size 16 array to output */
+void createLookAtMat(vec3 pos, vec3 target, vec3 up, float* m);
+
+/* Subtract two vector 3s. Performs a - b
+ * @params a, b: vec 3s
+ * @return: vec3 sum */
+vec3 subVec(vec3 a, vec3 b);
+
+/* Perform the dot product between two vector 3s
+ * @params a, b: vec 3s
+ * @return: float dot product */
+float dotVec(vec3 a, vec3 b);
+
+/* Normalize a vector 3
+ * @param a: vec 3 input
+ * @return: vec3 normalized output */
+vec3 normalize(vec3 a);
+
+/* Calculate cross product between two vector 3s
+ * @params a, b: vec3 inputs
+ * @return: vec3 cross product result */
+vec3 crossVec(vec3 a, vec3 b);
+
+/* Multiply a vector 3 by a matrix
+ * @param a: vec3 input
+ * @param m: size 16 array to multiply by
+ * @return: vec3 result */
+vec3 multiplyVec(vec3 a, float* m);

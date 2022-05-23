@@ -12,97 +12,6 @@ int SCREEN_WIDTH = 640;
 int SCREEN_HEIGHT = 480;
 float FOV = 90.0f;
 
-struct vec3 {
-	float x, y, z;
-	vec3() {
-		x = 0.0f;
-		y = 0.0f;
-		z = 0.0f;
-	}
-	vec3(float xx, float yy, float zz) {
-		x = xx;
-		y = yy;
-		z = zz;
-	}
-};
-
-// a - b
-vec3 subVec(vec3 a, vec3 b) {
-	vec3 ans;
-	ans.x = a.x - b.x;
-	ans.y = a.y - b.y;
-	ans.z = a.z - b.z;
-	return ans;
-}
-
-float dotVec(vec3 a, vec3 b) {
-	return (a.x*b.x) + (a.y*b.y) + (a.z*b.z);
-}
-
-vec3 normalize(vec3 a) {
-	vec3 ans;
-	float l = sqrtf(dotVec(a, a));
-	ans.x = a.x / l;
-	ans.y = a.y / l;
-	ans.z = a.z / l;
-	return ans;
-}
-
-vec3 crossVec(vec3 a, vec3 b) {
-	vec3 ans;
-	ans.x = (a.y * b.z) - (a.z * b.y);
-	ans.y = (a.z * b.x) - (a.x * b.z);
-	ans.z = (a.x * b.y) - (a.y * b.x);
-	return ans;
-}
-
-void createLookAtMat(vec3 pos, vec3 target, vec3 up, float* m) {
-	vec3 zaxis = normalize(subVec(target, pos));
-	vec3 xaxis = normalize(crossVec(zaxis, up));
-	vec3 yaxis = crossVec(xaxis, zaxis);
-
-	zaxis.x = -zaxis.x;
-	zaxis.y = -zaxis.y;
-	zaxis.z = -zaxis.z;
-
-	m[0] = xaxis.x;
-	m[1] = xaxis.y;
-	m[2] = xaxis.z;
-	m[3] = -dotVec(xaxis, pos);
-
-	m[4] = yaxis.x;
-	m[5] = yaxis.y;
-	m[6] = yaxis.z;
-	m[7] = -dotVec(yaxis, pos);
-
-	m[8] = zaxis.x;
-	m[9] = zaxis.y;
-	m[10] = zaxis.z;
-	m[11] = -dotVec(zaxis, pos);
-
-	m[12] = 0.0f;
-	m[13] = 0.0f;
-	m[14] = 0.0f;
-	m[15] = 1.0f;
-}
-
-vec3 multiplyVec(vec3 a, float* m) {
-	vec3 ans;
-
-	ans.x = (a.x * m[0]) + (a.y * m[1]) + (a.z * m[2]) + m[3];
-	ans.y = (a.x * m[4]) + (a.y * m[5]) + (a.z * m[6]) + m[7];
-	ans.z = (a.x * m[8]) + (a.y * m[9]) + (a.z * m[10]) + m[11];
-	float w = (a.x * m[12]) + (a.y * m[13]) + (a.z * m[14]) + m[15];
-
-	if (w != 0.0f) {
-		ans.x /= w;
-		ans.y /= w;
-		ans.z /= w;
-	}
-
-	return ans;
-}
-
 int main() {
 
 	clg clg(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -226,10 +135,6 @@ int main() {
 	float yaw = -1.5f;
 	float pitch = 0.0f;
 
-	bool firstMouse = true;
-	float lastX = SCREEN_WIDTH/2.0f;
-	float lastY = SCREEN_HEIGHT/2.0f;
-
 	float rot = 0.0f;
 	while (running) {
 		last = now;
@@ -257,9 +162,7 @@ int main() {
 		}
 
 		const uint8_t* keystate = SDL_GetKeyboardState(NULL);
-		//SDL_GetMouseState(&x, &y);
 		SDL_GetRelativeMouseState(&x, &y);
-		//std::cout << x << ", " << y << std::endl;
 
 		yaw += (float)x/400.0f;
 		pitch -= (float)y/400.0f;
@@ -269,12 +172,6 @@ int main() {
 		if (pitch < -1.49f) {
 			pitch = -1.49f;
 		}
-		std::cout << yaw << std::endl;
-
-		//float mouseRotMat[16];
-		//createRotMat(y, x/25.0f, 0.0f, mouseRotMat);
-
-		//front = multiplyVec(front, mouseRotMat);
 
 		vec3 direction(cosf(yaw) * cosf(pitch), sinf(pitch), sinf(yaw) * cosf(pitch));
 		front = direction;
@@ -313,11 +210,9 @@ int main() {
 			cameraPos.y += cameraMovementSpeed * deltaTime;
 		}
 
-		if (keystate[SDL_SCANCODE_LCTRL]) {
+		if (keystate[SDL_SCANCODE_LSHIFT]) {
 			cameraPos.y -= cameraMovementSpeed * deltaTime;
 		}
-
-
 
 		float rotMat[16];
 		createRotMat(0.0f, rot, rot, rotMat);
