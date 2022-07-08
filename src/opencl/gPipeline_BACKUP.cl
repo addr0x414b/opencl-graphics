@@ -69,11 +69,9 @@ void drawPoints(float* input, int* screen, int screenWidth, int screenHeight,
 		int maxSize = screenWidth * screenHeight;
 		int x = (int)round(input[i]);
 		int y = (int)round(input[i+1]);
-		if (x != (int)screenWidth/2 && y != (int)screenHeight/2) {
-			for (int j = -thickness; j <= thickness; j++) {
-				drawLine(x-thickness, y+j, x+thickness, y+j, screen, screenWidth,
-							screenHeight, r, g, b);
-			}
+		for (int j = -thickness; j <= thickness; j++) {
+			drawLine(x-thickness, y+j, x+thickness, y+j, screen, screenWidth,
+						screenHeight, r, g, b);
 		}
 	}
 }
@@ -92,12 +90,9 @@ void drawTrigs(float* input, int* screen, int screenWidth, int screenHeight,
 		int x3 = (int)round(input[i+attrCount*2]);
 		int y3 = (int)round(input[i+attrCount*2 + 1]);
 
-		if (x1 != screenWidth/2 && y1 != screenHeight/2) {
-			drawLine(x1, y1, x2, y2, screen, screenWidth, screenHeight, r, g, b);
-			drawLine(x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
-			drawLine(x3, y3, x1, y1, screen, screenWidth, screenHeight, r, g, b);
-
-		}
+		drawLine(x1, y1, x2, y2, screen, screenWidth, screenHeight, r, g, b);
+		drawLine(x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+		drawLine(x3, y3, x1, y1, screen, screenWidth, screenHeight, r, g, b);
 	}
 }
 
@@ -120,13 +115,11 @@ void centerPoints(float* input, float* output, int screenWidth,
 void multiply(float* input, float* output, float* m, int attrCount) {
 
 	int i = get_global_id(0);
-	//printf("%d\n", i);
 
 
 	if (i % attrCount == 0) {
 		output[i] = (input[i] * m[0]) + (input[i+1] * m[1]) + (input[i+2] * m[2])
 			+ m[3];
-		printf("%f\n", input[9]);
 	}
 
 	if (i % attrCount == 1) {
@@ -156,45 +149,6 @@ void multiply(float* input, float* output, float* m, int attrCount) {
 	}
 }
 
-void zClip(float* input, float* output, int attrCount) {
-	int i = get_global_id(0);
-
-	if (i % (attrCount*3) == 0 && i % attrCount == 0) {
-		float clip = -20.f;
-
-		float x1 = input[i];
-		float y1 = input[i+1];
-		float z1 = input[i+2];
-
-		float x2 = input[i+attrCount];
-		float y2 = input[i+attrCount+1];
-		float z2 = input[i+attrCount+2];
-
-		float x3 = input[i+attrCount*2];
-		float y3 = input[i+attrCount*2 + 1];
-		float z3 = input[i+attrCount*2 + 2];
-
-		if (z1 < clip && z2 < clip && z3 < clip) {
-			output[i] = x1;
-			output[i+1] = y1;
-			output[i+2] = z1;
-
-			output[i+attrCount] = x2;
-			output[i+attrCount+1] = y2;
-			output[i+attrCount+2] = z2;
-
-			output[i+attrCount*2] = x3;
-			output[i+attrCount*2+1] = y3;
-			output[i+attrCount*2+2] = z3;
-
-			output[i+attrCount*3] = 6969.0f;
-
-		}
-		//printf("%f, %f, %f\n", x1, y1, z1);
-	}
-
-}
-
 __kernel void drawWireframeDots(
 		__global float* input, __global float* output,
 		int attrCount, int tCount,
@@ -204,7 +158,6 @@ __kernel void drawWireframeDots(
 		__global float* projMat,
 		__global float* scaledOut, __global float* rotOut,
 		__global float* transOut, __global float* viewOut,
-		__global float* zClipOut,
 		__global int* screen, int screenWidth, int screenHeight, int dots) {
 
 	int i = get_global_id(0);
@@ -220,16 +173,12 @@ __kernel void drawWireframeDots(
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	multiply(transOut, viewOut, viewMat, attrCount);
-	//printf("%f, %f, %f\n", viewOut[0], viewOut[1], viewOut[2]);
+	printf("%f, %f, %f\n", viewOut[0], viewOut[1], viewOut[2]);
 	//printf("%f, %f, %f\n", viewOut[3], viewOut[4], viewOut[5]);
 	//printf("%f, %f, %f\n", viewOut[6], viewOut[7], viewOut[8]);
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
-	zClip(viewOut, zClipOut, attrCount);
-	barrier(CLK_GLOBAL_MEM_FENCE);
-
-	//multiply(viewOut, output, projMat, attrCount);
-	multiply(zClipOut, output, projMat, attrCount);
+	multiply(viewOut, output, projMat, attrCount);
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	centerPoints(output, output, screenWidth, screenHeight, attrCount);

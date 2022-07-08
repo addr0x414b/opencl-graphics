@@ -85,7 +85,7 @@ void clg::drawWireframeDots(
 	checkError(err, "DrawWireframeDotsKernel Arg 0 (input)");
 
 	cl::Buffer outputBuf(context, CL_MEM_READ_ONLY,
-			tCount*sizeof(float), NULL, &err);
+			tCount*sizeof(float)*5, NULL, &err);
 	checkError(err, "OutputBuf creation");
 	err = drawWireframeDotsKernel.setArg(1, sizeof(cl_mem), &outputBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 1 (output)");
@@ -164,14 +164,20 @@ void clg::drawWireframeDots(
 	err = drawWireframeDotsKernel.setArg(14, sizeof(cl_mem), &viewOutBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 14 (viewOut)");
 
-	err = drawWireframeDotsKernel.setArg(15, sizeof(cl_mem), &screenBuf);
-	checkError(err, "DrawWireframeDotsKernel Arg 15 (screen)");
+	cl::Buffer zClipOutBuf(context, CL_MEM_READ_WRITE,
+			tCount*sizeof(float), NULL, &err);
+	checkError(err, "ZClipOutBuf creation");
+	err = drawWireframeDotsKernel.setArg(15, sizeof(cl_mem), &zClipOutBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 15 (zClipOut)");
 
-	err = drawWireframeDotsKernel.setArg(16, sizeof(int), &screenWidth);
-	checkError(err, "DrawWireframeDotsKernel Arg 16 (screenWidth)");
+	err = drawWireframeDotsKernel.setArg(16, sizeof(cl_mem), &screenBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 16 (screen)");
 
-	err = drawWireframeDotsKernel.setArg(17, sizeof(int), &screenHeight);
-	checkError(err, "DrawWireframeDotsKernel Arg 17 (screenHeight)");
+	err = drawWireframeDotsKernel.setArg(17, sizeof(int), &screenWidth);
+	checkError(err, "DrawWireframeDotsKernel Arg 17 (screenWidth)");
+
+	err = drawWireframeDotsKernel.setArg(18, sizeof(int), &screenHeight);
+	checkError(err, "DrawWireframeDotsKernel Arg 18 (screenHeight)");
 
 	int dots = 0;
 
@@ -179,8 +185,8 @@ void clg::drawWireframeDots(
 		dots = 1;
 	}
 
-	err = drawWireframeDotsKernel.setArg(18, sizeof(int), &dots);
-	checkError(err, "DrawWireframeDotsKernel Arg 18 (dots)");
+	err = drawWireframeDotsKernel.setArg(19, sizeof(int), &dots);
+	checkError(err, "DrawWireframeDotsKernel Arg 19 (dots)");
 
 	drawWireframeDots(args);
 }

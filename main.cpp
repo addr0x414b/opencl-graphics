@@ -179,7 +179,8 @@ int main() {
 			pitch = -1.49f;
 		}
 
-		vec3 direction(cosf(yaw) * cosf(pitch), sinf(pitch), sinf(yaw) * cosf(pitch));
+		vec3 direction(cosf(yaw) * cosf(pitch), sinf(pitch), sinf(yaw) *
+				cosf(pitch));
 		front = direction;
 
 		if (keystate[SDL_SCANCODE_W]) {
@@ -232,6 +233,7 @@ int main() {
 
 		clg.drawWireframeDots(vertices, 3, pointCount, 255, 0, 255,
 				255, 255, 255, 3, scaleMat, rotMat, transMat, viewMat, projMat, true);
+
 
 		clg.updateScreen(screenBuffer);
 
