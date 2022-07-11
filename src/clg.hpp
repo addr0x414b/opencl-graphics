@@ -60,6 +60,8 @@ class clg {
 				float* scaleMat, float* rotMat, float* transMat, float* viewMat,
 				float* projMat, bool drawDots);
 
+		//void drawWireframeDots(float* vertices, int attrCount, int tCount);
+
 		/* Update the screen contents with whatever is inside the screenBuf
 		 * @param screen: array of size screenWidth * screenHeight */
 		void updateScreen(int* screen);

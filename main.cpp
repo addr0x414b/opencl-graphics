@@ -52,7 +52,11 @@ int main() {
 	float vertices[] = {
 		-1.0f, -1.0f, 0.0f,
 		1.0f, -1.0f, 0.0f,
-		0.0f, 1.0f, 0.0f
+		0.0f, 1.0f, 0.0f,
+
+		-1.0f, -1.0f, -0.5f,
+		1.0f, -1.0f, -0.5f,
+		0.0f, 1.0f, -0.5f
 	};
 
 	/*float vertices[] {
@@ -233,6 +237,7 @@ int main() {
 
 		clg.drawWireframeDots(vertices, 3, pointCount, 255, 0, 255,
 				255, 255, 255, 3, scaleMat, rotMat, transMat, viewMat, projMat, true);
+		//clg.drawWireframeDots(vertices, 3, pointCount);
 
 
 		clg.updateScreen(screenBuffer);

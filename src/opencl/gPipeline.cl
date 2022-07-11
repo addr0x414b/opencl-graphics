@@ -6,6 +6,8 @@ void drawPixel(int x, int y, int* screen, int screenWidth,
 	}
 }
 
+__global int clipExtra;
+
 void drawLine(int x1, int y1, int x2, int y2, int* screen, int screenWidth,
 		int screenHeight, int r, int g, int b) {
 	if (x1 == x2) {
@@ -62,137 +64,174 @@ void drawLine(int x1, int y1, int x2, int y2, int* screen, int screenWidth,
 }
 
 void drawPoints(float* input, int* screen, int screenWidth, int screenHeight,
-		int r, int g, int b, int thickness, int attrCount) {
+		int r, int g, int b, int thickness, int attrCount, int tCount) {
 
 	int i = get_global_id(0);
-	if (i % attrCount == 0) {
-		int maxSize = screenWidth * screenHeight;
-		int x = (int)round(input[i]);
-		int y = (int)round(input[i+1]);
-		if (x != (int)screenWidth/2 && y != (int)screenHeight/2) {
-			for (int j = -thickness; j <= thickness; j++) {
-				drawLine(x-thickness, y+j, x+thickness, y+j, screen, screenWidth,
-							screenHeight, r, g, b);
+	if (i < tCount) {
+		if (i % attrCount == 0) {
+			int maxSize = screenWidth * screenHeight;
+			int x = (int)round(input[i]);
+			int y = (int)round(input[i+1]);
+			if (x != (int)screenWidth/2 && y != (int)screenHeight/2) {
+				for (int j = -thickness; j <= thickness; j++) {
+					drawLine(x-thickness, y+j, x+thickness, y+j, screen, screenWidth,
+								screenHeight, r, g, b);
+				}
 			}
 		}
 	}
 }
 
 void drawTrigs(float* input, int* screen, int screenWidth, int screenHeight,
-		int pointCount, int r, int g, int b, int attrCount) {
+		int tCount, int r, int g, int b, int attrCount) {
 	int i = get_global_id(0);
 
-	if (i % (attrCount*3) == 0 && i % attrCount == 0) {
-		int x1 = (int)round(input[i]);
-		int y1 = (int)round(input[i+1]);
+	if (i < tCount) {
+		if (i % (attrCount*3) == 0 && i % attrCount == 0) {
+			int x1 = (int)round(input[i]);
+			int y1 = (int)round(input[i+1]);
 
-		int x2 = (int)round(input[i+attrCount]);
-		int y2 = (int)round(input[i+attrCount+1]);
+			int x2 = (int)round(input[i+attrCount]);
+			int y2 = (int)round(input[i+attrCount+1]);
 
-		int x3 = (int)round(input[i+attrCount*2]);
-		int y3 = (int)round(input[i+attrCount*2 + 1]);
+			int x3 = (int)round(input[i+attrCount*2]);
+			int y3 = (int)round(input[i+attrCount*2 + 1]);
 
-		if (x1 != screenWidth/2 && y1 != screenHeight/2) {
-			drawLine(x1, y1, x2, y2, screen, screenWidth, screenHeight, r, g, b);
-			drawLine(x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
-			drawLine(x3, y3, x1, y1, screen, screenWidth, screenHeight, r, g, b);
+			if (x1 != screenWidth/2 && y1 != screenHeight/2) {
+				drawLine(x1, y1, x2, y2, screen, screenWidth, screenHeight, r, g, b);
+				drawLine(x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+				drawLine(x3, y3, x1, y1, screen, screenWidth, screenHeight, r, g, b);
 
+			}
 		}
 	}
 }
 
 void centerPoints(float* input, float* output, int screenWidth,
-		int screenHeight, int attrCount){
+		int screenHeight, int attrCount, int tCount){
 
 	int i = get_global_id(0);
 
-	if (i % attrCount == 0) {
-		output[i] = input[i] * 1920.0f/4.0f;
-		output[i] += (float)screenWidth / 2.0f;
-	}
-	if (i % attrCount == 1) {
-		output[i] = -input[i] * 1920.0f/4.0f;
-		output[i] += (float)screenHeight / 2.0f;
-	}
-
-}
-
-void multiply(float* input, float* output, float* m, int attrCount) {
-
-	int i = get_global_id(0);
-	//printf("%d\n", i);
-
-
-	if (i % attrCount == 0) {
-		output[i] = (input[i] * m[0]) + (input[i+1] * m[1]) + (input[i+2] * m[2])
-			+ m[3];
-		printf("%f\n", input[9]);
-	}
-
-	if (i % attrCount == 1) {
-		output[i] = (input[i-1] * m[4]) + (input[i] * m[5]) + (input[i+1] * m[6])
-			+ m[7];
-	}
-
-	if (i % attrCount == 2) {
-		output[i] = (input[i-2] * m[8]) + (input[i-1] * m[9]) + (input[i] * m[10])
-			+ m[11];
-	}
-	barrier(CLK_LOCAL_MEM_FENCE);
-	if (i % attrCount == 0) {
-		float w = (input[i] * m[12]) + (input[i+1] * m[13]) + (input[i+2] * m[14])
-			+ m[15];
-		if (w != 0.0f) {
-			output[i] /= w;
-			output[i+1] /= w;
-			output[i+2] = output[i+2] / w;
+	if (i < tCount) {
+		if (i % attrCount == 0) {
+			output[i] = input[i] * 1920.0f/4.0f;
+			output[i] += (float)screenWidth / 2.0f;
 		}
-	}
-	barrier(CLK_LOCAL_MEM_FENCE);
-	if (attrCount > 3) {
-		if(i % attrCount > 2) {
-			output[i] = input[i];
+		if (i % attrCount == 1) {
+			output[i] = -input[i] * 1920.0f/4.0f;
+			output[i] += (float)screenHeight / 2.0f;
 		}
 	}
 }
 
-void zClip(float* input, float* output, int attrCount) {
+void multiply(float* input, float* output, float* m, int attrCount, int tCount) {
+
 	int i = get_global_id(0);
 
-	if (i % (attrCount*3) == 0 && i % attrCount == 0) {
-		float clip = -20.f;
-
-		float x1 = input[i];
-		float y1 = input[i+1];
-		float z1 = input[i+2];
-
-		float x2 = input[i+attrCount];
-		float y2 = input[i+attrCount+1];
-		float z2 = input[i+attrCount+2];
-
-		float x3 = input[i+attrCount*2];
-		float y3 = input[i+attrCount*2 + 1];
-		float z3 = input[i+attrCount*2 + 2];
-
-		if (z1 < clip && z2 < clip && z3 < clip) {
-			output[i] = x1;
-			output[i+1] = y1;
-			output[i+2] = z1;
-
-			output[i+attrCount] = x2;
-			output[i+attrCount+1] = y2;
-			output[i+attrCount+2] = z2;
-
-			output[i+attrCount*2] = x3;
-			output[i+attrCount*2+1] = y3;
-			output[i+attrCount*2+2] = z3;
-
-			output[i+attrCount*3] = 6969.0f;
-
+	if (i < tCount) {
+		if (i % attrCount == 0) {
+			output[i] = (input[i] * m[0]) + (input[i+1] * m[1]) + (input[i+2] * m[2])
+				+ m[3];
+			output[i+1] = (input[i] * m[4]) + (input[i+1] * m[5]) + (input[i+2] * m[6])
+				+ m[7];
+			output[i+2] = (input[i] * m[8]) + (input[i+1] * m[9]) + (input[i+2] * m[10])
+				+ m[11];
+			float w = (input[i] * m[12]) + (input[i+1] * m[13]) + (input[i+2] * m[14])
+				+ m[15];
+			if (w != 0.0f) {
+				output[i] /= w;
+				output[i+1] /= w;
+				output[i+2] = output[i+2] / w;
+			}
 		}
-		//printf("%f, %f, %f\n", x1, y1, z1);
-	}
 
+		if (attrCount > 3) {
+			if(i % attrCount > 2) {
+				output[i] = input[i];
+			}
+		}
+	}
+}
+
+void zClip(float* input, float* output, int attrCount, int tCount) {
+	int i = get_global_id(0);
+
+	if (i < tCount) {
+		if (i % (attrCount*3) == 0 && i % attrCount == 0) {
+			float clip = -20.f;
+
+			float x1 = input[i];
+			float y1 = input[i+1];
+			float z1 = input[i+2];
+
+			float x2 = input[i+attrCount];
+			float y2 = input[i+attrCount+1];
+			float z2 = input[i+attrCount+2];
+
+			float x3 = input[i+attrCount*2];
+			float y3 = input[i+attrCount*2 + 1];
+			float z3 = input[i+attrCount*2 + 2];
+
+			if (z1 < clip && z2 < clip && z3 < clip) {
+				output[i] = x1;
+				output[i+1] = y1;
+				output[i+2] = z1;
+
+				output[i+attrCount] = x2;
+				output[i+attrCount+1] = y2;
+				output[i+attrCount+2] = z2;
+
+				output[i+attrCount*2] = x3;
+				output[i+attrCount*2+1] = y3;
+				output[i+attrCount*2+2] = z3;
+			} else if (z1 > clip && z2 < clip && z3 < clip) {
+				float x2n = x2 - x1;
+				float y2n = y2 - y1;
+				float z2n = z2 - z1;
+
+				float t2 = (clip - z1) / z2n;
+
+				x2n = x1 + (x2n * t2);
+				y2n = y1 + (y2n * t2);
+				z2n = z1 + (z2n * t2);
+
+				output[i] = x2n;
+				output[i+1] = y2n;
+				output[i+2] = z2n;
+
+				output[i+attrCount] = x2;
+				output[i+attrCount+1] = y2;
+				output[i+attrCount+2] = z2;
+
+				output[i+attrCount*2] = x3;
+				output[i+attrCount*2+1] = y3;
+				output[i+attrCount*2+2] = z3;
+
+				float x3n = x3 - x1;
+				float y3n = y3 - y1;
+				float z3n = z3 - z1;
+
+				float t3 = (clip - z1) / z3n;
+
+				x3n = x1 + (x3n * t3);
+				y3n = y1 + (y3n * t3);
+				z3n = z1 + (z3n * t3);
+
+				output[tCount] = x2n;
+				output[tCount+1] = y2n;
+				output[tCount+2] = z2n;
+
+				output[tCount+3] = x3;
+				output[tCount+4] = y3;
+				output[tCount+5] = z3;
+
+				output[tCount+6] = x3n;
+				output[tCount+7] = y3n;
+				output[tCount+8] = z3n;
+				clipExtra += 9;
+			}
+		}
+	}
 }
 
 __kernel void drawWireframeDots(
@@ -205,42 +244,46 @@ __kernel void drawWireframeDots(
 		__global float* scaledOut, __global float* rotOut,
 		__global float* transOut, __global float* viewOut,
 		__global float* zClipOut,
-		__global int* screen, int screenWidth, int screenHeight, int dots) {
+		__global int* screen, int screenWidth, int screenHeight, int dots, __local float* tValues) {
 
-	int i = get_global_id(0);
-
-
-	multiply(input, scaledOut, scaleMat, attrCount);
-	barrier(CLK_LOCAL_MEM_FENCE);
-
-	multiply(scaledOut, rotOut, rotMat, attrCount);
+	clipExtra = tCount;
+	multiply(input, scaledOut, scaleMat, attrCount, tCount);
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
-	multiply(rotOut, transOut, transMat, attrCount);
+	multiply(scaledOut, rotOut, rotMat, attrCount, tCount);
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
-	multiply(transOut, viewOut, viewMat, attrCount);
+	multiply(rotOut, transOut, transMat, attrCount, tCount);
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	multiply(transOut, viewOut, viewMat, attrCount, tCount);
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	zClip(viewOut, zClipOut, attrCount, tCount);
+	//printf("Test is: %d\n", clipExtra);
 	//printf("%f, %f, %f\n", viewOut[0], viewOut[1], viewOut[2]);
 	//printf("%f, %f, %f\n", viewOut[3], viewOut[4], viewOut[5]);
 	//printf("%f, %f, %f\n", viewOut[6], viewOut[7], viewOut[8]);
+	//tCount += 9;
 	barrier(CLK_GLOBAL_MEM_FENCE);
+	tCount = clipExtra;
 
-	zClip(viewOut, zClipOut, attrCount);
-	barrier(CLK_GLOBAL_MEM_FENCE);
-
+	//printf("%d and %d\n", get_global_id(0), tCount);
 	//multiply(viewOut, output, projMat, attrCount);
-	multiply(zClipOut, output, projMat, attrCount);
+	multiply(zClipOut, output, projMat, attrCount, tCount);
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
-	centerPoints(output, output, screenWidth, screenHeight, attrCount);
+
+	centerPoints(output, output, screenWidth, screenHeight, attrCount, tCount);
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	drawTrigs(output, screen, screenWidth, screenHeight, tCount,
 			lineParams[0], lineParams[1], lineParams[2], attrCount);
-	barrier(CLK_LOCAL_MEM_FENCE);
+	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	if (dots == 1) {
 		drawPoints(output, screen, screenWidth, screenHeight,
-				dotParams[0], dotParams[1], dotParams[2], dotParams[3], attrCount);
+			dotParams[0], dotParams[1], dotParams[2], dotParams[3], attrCount,
+			tCount);
 	}
 }
