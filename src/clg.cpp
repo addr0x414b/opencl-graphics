@@ -108,7 +108,8 @@ void clg::drawWireframeDots(
 		}
 	}
 
-	cl::EnqueueArgs args(queue, cl::NDRange(gSize), cl::NDRange(lSize));
+	//cl::EnqueueArgs args(queue, cl::NDRange(gSize), cl::NDRange(lSize));
+	cl::EnqueueArgs args(queue, cl::NDRange(tCount*2));
 	//std::cout << tCount << ", " << gSize << ", " << lSize << std::endl;
 	//std::cout << tCount << std::endl;
 
@@ -119,13 +120,13 @@ void clg::drawWireframeDots(
 	cl::KernelFunctor<> drawWireframeDots(drawWireframeDotsKernel);
 
 	cl::Buffer inputBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			(tCount+padder)*sizeof(float), vertices, &err);
+			(tCount)*sizeof(float), vertices, &err);
 	checkError(err, "InputBuf creation");
 	err = drawWireframeDotsKernel.setArg(0, sizeof(cl_mem), &inputBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 0 (input)");
 
 	cl::Buffer outputBuf(context, CL_MEM_READ_ONLY,
-			(tCount+padder)*sizeof(float)*5, NULL, &err);
+			(tCount*2)*sizeof(float), NULL, &err);
 	checkError(err, "OutputBuf creation");
 	err = drawWireframeDotsKernel.setArg(1, sizeof(cl_mem), &outputBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 1 (output)");
@@ -133,7 +134,9 @@ void clg::drawWireframeDots(
 	err = drawWireframeDotsKernel.setArg(2, sizeof(int), &attrCount);
 	checkError(err, "DrawWireframeDotsKernel Arg 2 (attrCount)");
 
-	err = drawWireframeDotsKernel.setArg(3, sizeof(int), &tCount);
+	cl::Buffer tCountBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			sizeof(int), &tCount, &err);
+	err = drawWireframeDotsKernel.setArg(3, sizeof(cl_mem), &tCountBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 3 (tCount)");
 
 	int lineP[] = { lR, lG, lB};
@@ -205,7 +208,7 @@ void clg::drawWireframeDots(
 	checkError(err, "DrawWireframeDotsKernel Arg 14 (viewOut)");
 
 	cl::Buffer zClipOutBuf(context, CL_MEM_READ_WRITE,
-			(tCount+padder)*sizeof(float), NULL, &err);
+			(tCount)*sizeof(float), NULL, &err);
 	checkError(err, "ZClipOutBuf creation");
 	err = drawWireframeDotsKernel.setArg(15, sizeof(cl_mem), &zClipOutBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 15 (zClipOut)");
@@ -228,10 +231,20 @@ void clg::drawWireframeDots(
 	err = drawWireframeDotsKernel.setArg(19, sizeof(int), &dots);
 	checkError(err, "DrawWireframeDotsKernel Arg 19 (dots)");
 
-	err = drawWireframeDotsKernel.setArg(20, (tCount+padder)*sizeof(float), NULL);
-	checkError(err, "DrawWireframeDotsKernel Arg 20 (localMem)");
+	cl::Buffer clippedOrigBuf(context, CL_MEM_READ_WRITE,
+			(tCount)*sizeof(float), NULL, &err);
+	checkError(err, "ClippedOrigBuf creation");
+	err = drawWireframeDotsKernel.setArg(20, sizeof(cl_mem), &clippedOrigBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 20 (clippedOrig)");
+
+	cl::Buffer combinedBuf(context, CL_MEM_READ_WRITE,
+			(tCount*2)*sizeof(float), NULL, &err);
+	checkError(err, "CombinedBuf creation");
+	err = drawWireframeDotsKernel.setArg(21, sizeof(cl_mem), &combinedBuf);
+	checkError(err, "DrawWireframeDotsKernel Arg 21 (combined)");
 
 	drawWireframeDots(args);
+
 }
 
 /* Draw triangles to screen buffer in a wireframe mode with or without
