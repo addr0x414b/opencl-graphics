@@ -109,6 +109,7 @@ void clg::drawWireframeDots(
 	}
 
 	//cl::EnqueueArgs args(queue, cl::NDRange(gSize), cl::NDRange(lSize));
+	int workers = tCount * 2 * 2 * 2 * 2 * 2;
 	cl::EnqueueArgs args(queue, cl::NDRange(tCount*2));
 	//std::cout << tCount << ", " << gSize << ", " << lSize << std::endl;
 	//std::cout << tCount << std::endl;

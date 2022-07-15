@@ -6,8 +6,6 @@ void drawPixel(int x, int y, int* screen, int screenWidth,
 	}
 }
 
-__global int clipExtra;
-
 void drawLine(int x1, int y1, int x2, int y2, int* screen, int screenWidth,
 		int screenHeight, int r, int g, int b) {
 	if (x1 == x2) {
@@ -82,6 +80,139 @@ void drawPoints(float* input, int* screen, int screenWidth, int screenHeight,
 	}
 }
 
+void sort2D(int* x1, int* y1, int* x2, int* y2, int* x3, int* y3, int n, int gl, int xy) {
+	if (gl == 1) {
+		if (xy == 0) {
+			if (*x1 <= *x2 && *x2 <= *x3) {
+				return;
+			} else {
+				if (*x1 <= *x2 && *x1 <= *x3) {
+					if (*x3 <= *x2) {
+						int tx = *x3;
+						int ty = *y3;
+
+						*x3 = *x2;
+						*y3 = *y2;
+
+						*x2 = tx;
+						*y2 = ty;
+					}
+				} else if (*x2 <= *x1 && *x2 <= *x3) {
+					int tx = *x1;
+					int ty = *y1;
+
+					*x1 = *x2;
+					*y1 = *y2;
+
+					*x2 = tx;
+					*y2 = ty;
+
+					if (*x3 <= *x2) {
+						tx = *x3;
+						ty = *y3;
+
+						*x3 = *x2;
+						*y3 = *y2;
+
+						*x2 = tx;
+						*y2 = ty;
+					}
+				} else if (*x3 <= *x1 && *x3 <= *x2) {
+					int tx = *x1;
+					int ty = *y1;
+
+					*x1 = *x3;
+					*y1 = *y3;
+
+					*x3 = tx;
+					*y3 = ty;
+
+					if (*x3 <= *x2) {
+						tx = *x3;
+						ty = *y3;
+
+						*x3 = *x2;
+						*y3 = *y2;
+
+						*x2 = tx;
+						*y2 = ty;
+					}
+				}
+			}
+		}
+	}
+}
+
+void clipDraw(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
+		int screenWidth, int screenHeight, int r, int g, int b) {
+	int clipAmt = screenWidth - 50;
+	if (x1 < clipAmt && x2 < clipAmt && x3 < clipAmt) {
+		if (x1 != screenWidth/2 && y1 != screenHeight/2) {
+			drawLine(x1, y1, x2, y2, screen, screenWidth, screenHeight, r, g, b);
+			drawLine(x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+			drawLine(x3, y3, x1, y1, screen, screenWidth, screenHeight, r, g, b);
+		}
+	} else if (x1 > clipAmt && x2 > clipAmt && x3 > clipAmt) {
+	} else {
+		sort2D(&x1, &y1, &x2, &y2, &x3, &y3, screenWidth, 1, 0);
+		if (x2 < clipAmt) {
+			int ax = clipAmt;
+			int ay = 0;
+
+			int bx = clipAmt;
+			int by = 0;
+			if (y1 == y3) {
+				ay = y1;
+			} else {
+				int s1 = (int)((y3 - y1) / (x3 - x1));
+				int b1 = (int)(y3 - (s1 * x3));
+				ay = (int)((s1*ax) + b1);
+			}
+
+			if (y2 == y3) {
+				by = y2;
+			} else {
+				int s2 = (int)((y3 - y2) / (x3 - x2));
+				int b2 = (int)(y3 - (s2 * x3));
+				by = (int)((s2*bx) + b2);
+			}
+
+			drawLine(x1, y1, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+			drawLine(ax, ay, x2, y2, screen, screenWidth, screenHeight, r, g, b);
+			drawLine(x2, y2, x1, y1, screen, screenWidth, screenHeight, r, g, b);
+
+			drawLine(ax, ay, bx, by, screen, screenWidth, screenHeight, r, g, b);
+			drawLine(bx, by, x2, y2, screen, screenWidth, screenHeight, r, g, b);
+			drawLine(x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+		} else {
+			int ax = clipAmt;
+			int ay = 0;
+			int bx = clipAmt;
+			int by = 0;
+
+			if (y1 == y3) {
+				ay = y1;
+			} else {
+				int s1 = (int)((y3 - y1) / (x3 - x1));
+				int b1 = (int)(y3 - (s1 * x3));
+				ay = (int)((s1*ax) + b1);
+			}
+
+			if (y2 == y3) {
+				by = y2;
+			} else {
+				int s2 = (int)((y2 - y1) / (x2 - x1));
+				int b2 = (int)(y2 - (s2 * x2));
+				by = (int)((s2*bx) + b2);
+			}
+
+			drawLine(x1, y1, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+			drawLine(ax, ay, bx, by, screen, screenWidth, screenHeight, r, g, b);
+			drawLine(bx, by, x1, y1, screen, screenWidth, screenHeight, r, g, b);
+		}
+	}
+}
+
 void drawTrigs(float* input, int* screen, int screenWidth, int screenHeight,
 		int tCount, int r, int g, int b, int attrCount) {
 	int i = get_global_id(0);
@@ -97,12 +228,14 @@ void drawTrigs(float* input, int* screen, int screenWidth, int screenHeight,
 			int x3 = (int)round(input[i+attrCount*2]);
 			int y3 = (int)round(input[i+attrCount*2 + 1]);
 
-			if (x1 != screenWidth/2 && y1 != screenHeight/2) {
+			clipDraw(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+
+			/*if (x1 != screenWidth/2 && y1 != screenHeight/2) {
 				drawLine(x1, y1, x2, y2, screen, screenWidth, screenHeight, r, g, b);
 				drawLine(x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
 				drawLine(x3, y3, x1, y1, screen, screenWidth, screenHeight, r, g, b);
 
-			}
+			}*/
 		}
 	}
 }
@@ -163,7 +296,7 @@ void zClip(float* input, float* orig, float* clipped, int attrCount, __global in
 
 	if (i < *tCount) {
 		if (i % (attrCount*3) == 0 && i % attrCount == 0) {
-			float clip = -20.f;
+			float clip = -2.f;
 
 			//printf("%d\n", get_local_id(0));
 			float x1 = input[i];
@@ -349,7 +482,6 @@ void combineTrigs(float* orig, float* clipped, float* output, int n, int tCount)
 		if (i < n) {
 			output[i] = orig[i];
 		} else if(i >= n) {
-
 			output[i] = clipped[i - n];
 		}
 	}
@@ -406,7 +538,6 @@ __kernel void drawWireframeDots(
 	//multiply(zClipOut, output, projMat, attrCount, *tCount);
 	multiply(combined, output, projMat, attrCount, *tCount);
 	barrier(CLK_GLOBAL_MEM_FENCE);
-
 
 	centerPoints(output, output, screenWidth, screenHeight, attrCount, *tCount);
 	barrier(CLK_GLOBAL_MEM_FENCE);

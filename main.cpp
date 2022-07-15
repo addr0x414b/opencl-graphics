@@ -49,6 +49,12 @@ int main() {
 	float transMat[16];
 	createTransMat(0.0f, 0.0f, -50.0f, transMat);
 
+	float vertices[] = {
+		-1.0f, -1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+	};
+
 	/*float vertices[] = {
 		1.0f, 1.0f, 0.0f,
 		-1.0f, -1.0f, 0.0f,
@@ -152,7 +158,7 @@ int main() {
 
 	};*/
 
-	float vertices[] {
+	/*float vertices[] {
 		-1.0f, 1.0f, 1.0f,
 		-1.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, 1.0f,
@@ -200,7 +206,7 @@ int main() {
 		1.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, -1.0f,
 		-1.0f, -1.0f, -1.0f,
-	};
+	};*/
 
 	/*float vertices[] = {
 		-1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f, 	-1.0f, 1.0f,
@@ -320,7 +326,7 @@ int main() {
 
 		float rotMat[16];
 		createRotMat(0.0f, rot, rot, rotMat);
-		rot += 0.5f;
+		//rot += 0.5f;
 
 		vec3 target(cameraPos.x+front.x, cameraPos.y+front.y, cameraPos.z+front.z);
 		float viewMat[16];
@@ -329,7 +335,8 @@ int main() {
 		int screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
 
 		clg.drawWireframeDots(vertices, 3, pointCount, 255, 0, 255,
-				255, 255, 255, 3, scaleMat, rotMat, transMat, viewMat, projMat, true);
+				255, 255, 255, 3, scaleMat, rotMat, transMat, viewMat, projMat, false);
+
 		//clg.drawWireframeDots(vertices, 3, pointCount);
 
 
