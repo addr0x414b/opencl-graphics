@@ -10,7 +10,7 @@
 
 int SCREEN_WIDTH = 1920;
 int SCREEN_HEIGHT = 1080;
-float FOV = 90.0f;
+float FOV = 60.0f;
 
 int main() {
 
@@ -43,17 +43,17 @@ int main() {
 	int running = 1;
 
 	float projMat[16];
-	createProjMat(60.0f, 0.1f, 1000.0f, projMat);
+	createProjMat(FOV, 0.1f, 1000.0f, projMat);
 	float scaleMat[16];
 	createScaleMat(5.f, scaleMat);
 	float transMat[16];
 	createTransMat(0.0f, 0.0f, -50.0f, transMat);
 
-	float vertices[] = {
+	/*float vertices[] = {
 		-1.0f, -1.0f, 0.0f,
 		0.0f, 1.0f, 0.0f,
-		1.0f, -1.0f, 0.0f,
-	};
+		1.0f, -3.0f, 0.0f,
+	};*/
 
 	/*float vertices[] = {
 		1.0f, 1.0f, 0.0f,
@@ -158,7 +158,7 @@ int main() {
 
 	};*/
 
-	/*float vertices[] {
+	float vertices[] {
 		-1.0f, 1.0f, 1.0f,
 		-1.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, 1.0f,
@@ -206,7 +206,7 @@ int main() {
 		1.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, -1.0f,
 		-1.0f, -1.0f, -1.0f,
-	};*/
+	};
 
 	/*float vertices[] = {
 		-1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f, 	-1.0f, 1.0f,
@@ -326,7 +326,7 @@ int main() {
 
 		float rotMat[16];
 		createRotMat(0.0f, rot, rot, rotMat);
-		//rot += 0.5f;
+		rot += 0.5f;
 
 		vec3 target(cameraPos.x+front.x, cameraPos.y+front.y, cameraPos.z+front.z);
 		float viewMat[16];
