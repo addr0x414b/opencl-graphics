@@ -49,10 +49,13 @@ int main() {
 	float transMat[16];
 	createTransMat(0.0f, 0.0f, -50.0f, transMat);
 
+	float transMat2[16];
+	createTransMat(25.0f, 0.0f, -50.0f, transMat2);
+
 	/*float vertices[] = {
 		-1.0f, -1.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,
-		1.0f, -3.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
 	};*/
 
 	/*float vertices[] = {
@@ -208,6 +211,32 @@ int main() {
 		-1.0f, -1.0f, -1.0f,
 	};
 
+	float vertices2[] {
+		-1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f,
+		0.0f, 1.0f, 0.0f,
+
+		1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f,
+		0.0f, 1.0f, 0.0f,
+
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		0.0f, 1.0f, 0.0f,
+
+		-1.0f, -1.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f,
+		0.0f, 1.0f, 0.0f,
+
+		-1.0f, -1.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, 1.0f,
+
+		1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f
+	};
+
 	/*float vertices[] = {
 		-1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f, 	-1.0f, 1.0f,
 		1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f, 	1.0, 1.0,
@@ -229,6 +258,7 @@ int main() {
 	};*/
 
 	int pointCount = sizeof(vertices) / sizeof(float);
+	int pointCount2 = sizeof(vertices2) / sizeof(float);
 
 	vec3 cameraPos(0.0f, 0.0f, 10.0f);
 	vec3 front(0.0f, 0.0f, -1.0f);
@@ -249,7 +279,7 @@ int main() {
 		last = now;
 		now = SDL_GetPerformanceCounter();
 		deltaTime = (double)((now - last)*1000 /
-				(double)SDL_GetPerformanceFrequency()) * 0.001f;
+			(double)SDL_GetPerformanceFrequency()) * 0.001f;
 
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_QUIT) {
@@ -326,7 +356,7 @@ int main() {
 
 		float rotMat[16];
 		createRotMat(0.0f, rot, rot, rotMat);
-		rot += 0.5f;
+		//rot += 0.5f;
 
 		vec3 target(cameraPos.x+front.x, cameraPos.y+front.y, cameraPos.z+front.z);
 		float viewMat[16];
@@ -336,6 +366,9 @@ int main() {
 
 		clg.drawWireframeDots(vertices, 3, pointCount, 255, 0, 255,
 				255, 255, 255, 3, scaleMat, rotMat, transMat, viewMat, projMat, false);
+
+		//clg.drawWireframeDots(vertices2, 3, pointCount2, 255, 255, 0,
+		//		255, 255, 255, 3, scaleMat, rotMat, transMat2, viewMat, projMat, false);
 
 		//clg.drawWireframeDots(vertices, 3, pointCount);
 

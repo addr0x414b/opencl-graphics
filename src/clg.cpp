@@ -110,7 +110,7 @@ void clg::drawWireframeDots(
 
 	//cl::EnqueueArgs args(queue, cl::NDRange(gSize), cl::NDRange(lSize));
 	int workers = tCount * 2 * 2 * 2 * 2 * 2;
-	cl::EnqueueArgs args(queue, cl::NDRange(tCount*2));
+	cl::EnqueueArgs args(queue, cl::NDRange(tCount));
 	//std::cout << tCount << ", " << gSize << ", " << lSize << std::endl;
 	//std::cout << tCount << std::endl;
 
@@ -127,7 +127,7 @@ void clg::drawWireframeDots(
 	checkError(err, "DrawWireframeDotsKernel Arg 0 (input)");
 
 	cl::Buffer outputBuf(context, CL_MEM_READ_ONLY,
-			(tCount*2)*sizeof(float), NULL, &err);
+			(tCount)*sizeof(float), NULL, &err);
 	checkError(err, "OutputBuf creation");
 	err = drawWireframeDotsKernel.setArg(1, sizeof(cl_mem), &outputBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 1 (output)");
@@ -185,25 +185,25 @@ void clg::drawWireframeDots(
 	checkError(err, "DrawWireframeDotsKernel Arg 10 (projMat)");
 
 	cl::Buffer scaledOutBuf(context, CL_MEM_READ_WRITE,
-			(tCount+padder)*sizeof(float), NULL, &err);
+			(tCount)*sizeof(float), NULL, &err);
 	checkError(err, "ScaledOutBuf creation");
 	err = drawWireframeDotsKernel.setArg(11, sizeof(cl_mem), &scaledOutBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 11 (scaledOut)");
 
 	cl::Buffer rotOutBuf(context, CL_MEM_READ_WRITE,
-			(tCount+padder)*sizeof(float), NULL, &err);
+			(tCount)*sizeof(float), NULL, &err);
 	checkError(err, "RotOutBuf creation");
 	err = drawWireframeDotsKernel.setArg(12, sizeof(cl_mem), &rotOutBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 12 (rotOut)");
 
 	cl::Buffer transOutBuf(context, CL_MEM_READ_WRITE,
-			(tCount+padder)*sizeof(float), NULL, &err);
+			(tCount)*sizeof(float), NULL, &err);
 	checkError(err, "TransOutBuf creation");
 	err = drawWireframeDotsKernel.setArg(13, sizeof(cl_mem), &transOutBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 13 (transOut)");
 
 	cl::Buffer viewOutBuf(context, CL_MEM_READ_WRITE,
-			(tCount+padder)*sizeof(float), NULL, &err);
+			(tCount)*sizeof(float), NULL, &err);
 	checkError(err, "ViewOutBuf creation");
 	err = drawWireframeDotsKernel.setArg(14, sizeof(cl_mem), &viewOutBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 14 (viewOut)");
@@ -239,7 +239,7 @@ void clg::drawWireframeDots(
 	checkError(err, "DrawWireframeDotsKernel Arg 20 (clippedOrig)");
 
 	cl::Buffer combinedBuf(context, CL_MEM_READ_WRITE,
-			(tCount*2)*sizeof(float), NULL, &err);
+			(tCount)*sizeof(float), NULL, &err);
 	checkError(err, "CombinedBuf creation");
 	err = drawWireframeDotsKernel.setArg(21, sizeof(cl_mem), &combinedBuf);
 	checkError(err, "DrawWireframeDotsKernel Arg 21 (combined)");
