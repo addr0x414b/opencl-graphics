@@ -275,6 +275,7 @@ int main() {
 	float pitch = 0.0f;
 
 	float rot = 0.0f;
+	float rot2 = 0.0f;
 	while (running) {
 		last = now;
 		now = SDL_GetPerformanceCounter();
@@ -358,17 +359,21 @@ int main() {
 		createRotMat(0.0f, rot, rot, rotMat);
 		//rot += 0.5f;
 
+		float rotMat2[16];
+		createRotMat(0.0f, rot2, 0.0f, rotMat2);
+		//rot2 += 1.f;
+
 		vec3 target(cameraPos.x+front.x, cameraPos.y+front.y, cameraPos.z+front.z);
 		float viewMat[16];
 		createLookAtMat(cameraPos, target, up, viewMat);
 
 		int screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
 
-		clg.drawWireframeDots(vertices, 3, pointCount, 255, 0, 255,
-				255, 255, 255, 3, scaleMat, rotMat, transMat, viewMat, projMat, false);
+		clg.drawWireframeDots(vertices, 3, pointCount, 0, 255, 0,
+				255, 255, 255, 3, scaleMat, rotMat, transMat, viewMat, projMat, true);
 
-		//clg.drawWireframeDots(vertices2, 3, pointCount2, 255, 255, 0,
-		//		255, 255, 255, 3, scaleMat, rotMat, transMat2, viewMat, projMat, false);
+		clg.drawWireframeDots(vertices2, 3, pointCount2, 255, 255, 0,
+				255, 255, 255, 3, scaleMat, rotMat2, transMat2, viewMat, projMat, false);
 
 		//clg.drawWireframeDots(vertices, 3, pointCount);
 

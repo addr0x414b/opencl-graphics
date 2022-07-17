@@ -77,44 +77,7 @@ void clg::drawWireframeDots(
 		float* scaleMat, float* rotMat, float* transMat, float* viewMat,
 		float* projMat, bool drawDots) {
 
-	int padder = 50;
-	int gSize = 32;
-	int lSize = 32;
-
-	int tester = tCount;
-	tester += padder;
-	if (tester > 32) {
-		if (tester % 32 != 0) {
-			while (tester % 32 != 0) {
-				tester += 1;
-				if (tester % 32 == 0) {
-					for (int i = 256; i > 32; i -= 32) {
-						if (tester % i == 0) {
-							gSize = tester;
-							lSize = i;
-							break;
-						}
-					}
-				}
-			}
-		} else {
-			for (int i = 256; i > 32; i -= 32) {
-				if (tester % i == 0) {
-					gSize = tester;
-					lSize = i;
-					break;
-				}
-			}
-		}
-	}
-
-	//cl::EnqueueArgs args(queue, cl::NDRange(gSize), cl::NDRange(lSize));
-	int workers = tCount * 2 * 2 * 2 * 2 * 2;
 	cl::EnqueueArgs args(queue, cl::NDRange(tCount));
-	//std::cout << tCount << ", " << gSize << ", " << lSize << std::endl;
-	//std::cout << tCount << std::endl;
-
-	//cl::EnqueueArgs args(queue, cl::NDRange(696969696));
 
 	cl::Kernel drawWireframeDotsKernel(pipelineProgram, "drawWireframeDots", &err);
 	checkError(err, "DrawWireframeDotsKernel creation");
@@ -135,9 +98,7 @@ void clg::drawWireframeDots(
 	err = drawWireframeDotsKernel.setArg(2, sizeof(int), &attrCount);
 	checkError(err, "DrawWireframeDotsKernel Arg 2 (attrCount)");
 
-	cl::Buffer tCountBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			sizeof(int), &tCount, &err);
-	err = drawWireframeDotsKernel.setArg(3, sizeof(cl_mem), &tCountBuf);
+	err = drawWireframeDotsKernel.setArg(3, sizeof(int), &tCount);
 	checkError(err, "DrawWireframeDotsKernel Arg 3 (tCount)");
 
 	int lineP[] = { lR, lG, lB};
@@ -247,60 +208,6 @@ void clg::drawWireframeDots(
 	drawWireframeDots(args);
 
 }
-
-/* Draw triangles to screen buffer in a wireframe mode with or without
- * dots at each point
- * @param vertices: array of the vertices
- * @param attrCount: number of items combined for each attribute
- * @param tCount: total number in vertices
- * @params lR, lG, lB: line red, green, blue values 0-255,
- * @params dR, dG, dB: dot red, green, blue values 0-255,
- * @param dThickness: dot thickness,
- * @params scaleMat, rotMat, transMat, projMat: vertex matrices
- * @param drawDots: whether or not you want dots to be drawn at each point*/
-/*void clg::drawWireframeDots(float* vertices, int attrCount, int tCount) {
-	int gSize = 32;
-	int lSize = 32;
-
-	int tester = tCount;
-	if (tester > 32) {
-		while (tester % 32 != 0) {
-			tester += 1;
-			if (tester % 32 == 0) {
-				for (int i = 256; i > 32; i -= 32) {
-					if (tester % i == 0) {
-						gSize = tester;
-						lSize = i;
-					}
-				}
-			}
-		}
-	}
-
-	//std::cout << tester << ", " << gSize << ", " << lSize << ", " << tCount << std::endl;
-
-	cl::EnqueueArgs args(queue, cl::NDRange(gSize), cl::NDRange(lSize));
-
-	cl::Kernel drawWireframeDotsKernel(pipelineProgram, "drawWireframeDots", &err);
-	checkError(err, "DrawWireframeDotsKernel creation");
-	cl::KernelFunctor<> drawWireframeDots(drawWireframeDotsKernel);
-
-	cl::Buffer inputBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-			tCount*sizeof(float), vertices, &err);
-	checkError(err, "InputBuf creation");
-	err = drawWireframeDotsKernel.setArg(0, sizeof(cl_mem), &inputBuf);
-	checkError(err, "DrawWireframeDotsKernel Arg 0 (input)");
-
-	err = drawWireframeDotsKernel.setArg(1, sizeof(int), &attrCount);
-	checkError(err, "DrawWireframeDotsKernel Arg 1 (attrCount)");
-
-	err = drawWireframeDotsKernel.setArg(2, sizeof(int), &tCount);
-	checkError(err, "DrawWireframeDotsKernel Arg 2 (tCount)");
-
-	drawWireframeDots(args);
-
-}*/
-
 
 /* Set the screen size. Useful when updating the screen resolution
  * @params sWidth, sHeight: new screen width and height */
