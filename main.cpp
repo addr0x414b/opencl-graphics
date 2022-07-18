@@ -242,8 +242,8 @@ int main() {
 
 	/*float vertices[] = {
 		-1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
-		1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
-		0.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
+		1.0f, -2.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
+		1.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
 
 		//0.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
 		//1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
@@ -436,9 +436,14 @@ int main() {
 		//clg.drawWireframeDots(vertices2, 3, pointCount2, 255, 255, 0,
 		//		255, 255, 255, 3, scaleMat, rotMat2, transMat2, viewMat, projMat, false);
 
-		clg.drawTrigs(vertices, 6, pointCount, 0, 255, 0,
+		clg.fillTrigs(vertices, 6, pointCount, 0, 255, 0,
 		scaleMat, rotMat, transMat, viewMat, projMat,
 		cameraPos.x, cameraPos.y, cameraPos.z);
+
+		clg.drawTrigs(vertices, 6, pointCount, 255, 0, 0,
+		scaleMat, rotMat, transMat, viewMat, projMat,
+		cameraPos.x, cameraPos.y, cameraPos.z);
+
 
 
 		//clg.drawWireframeDots(vertices, 3, pointCount);

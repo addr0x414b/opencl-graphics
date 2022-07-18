@@ -707,3 +707,108 @@ float camY, float camZ, int attrCount, int tCount) {
      }*/
   }
 }
+
+void fillFb(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
+int screenWidth, int screenHeight, int tCount, int r, int g, int b, int attrCount) {
+  float s1 = (((float)y3 - (float)y1) / ((float)x3 - (float)x1));
+  float b1 = ((float)y1 - (s1 * (float)x1));
+
+  float s2 = (((float)y2 - (float)y1) / ((float)x2 - (float)x1));
+  float b2 = ((float)y1 - (s2 * (float)x1));
+
+  //printf("(%d, %d), (%d, %d), (%d, %d)\n", x1, y1, x2, y2, x3, y3);
+
+  int ax;
+  int bx;
+
+  for (int y = y1; y <= y3; y++) {
+    if (x1 != x3) {
+      ax = (int)round(((float)y - b1) / s1);
+    } else {
+      ax = x1;
+    }
+
+    if (x1 != x2) {
+      bx = (int)round(((float)y - b2) / s2);
+    } else {
+      bx = x1;
+    }
+
+    drawLine(ax, y, bx, y, screen, screenWidth, screenHeight, r, g, b);
+  }
+}
+
+void fillFt(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
+int screenWidth, int screenHeight, int tCount, int r, int g, int b, int attrCount) {
+  float s1 = (((float)y3 - (float)y1) / ((float)x3 - (float)x1));
+  float b1 = ((float)y3 - (s1 * (float)x3));
+
+  float s2 = (((float)y3 - (float)y2) / ((float)x3 - (float)x2));
+  float b2 = ((float)y3 - (s2 * (float)x3));
+
+  int ax;
+  int bx;
+
+  for (int y = y3; y >= y1; y--) {
+    if (x1 != x3) {
+      ax = (int)round(((float)y - b1) / s1);
+    } else {
+      ax = x1;
+    }
+
+    if (x2 != x3) {
+      bx = (int)round(((float)y - b2) / s2);
+    } else {
+      bx = x2;
+    }
+
+    drawLine(ax, y, bx, y, screen, screenWidth, screenHeight, r, g, b);
+  }
+}
+
+void fillTrigs(float* input, int* screen, int screenWidth, int screenHeight,
+int tCount, int r, int g, int b, int attrCount) {
+  int i = get_global_id(0);
+
+  if (i < tCount) {
+    if (i % (attrCount*3) == 0 && i % attrCount == 0) {
+      int x1 = (int)round(input[i]);
+      int y1 = (int)round(input[i+1]);
+
+      int x2 = (int)round(input[i+attrCount]);
+      int y2 = (int)round(input[i+attrCount+1]);
+
+      int x3 = (int)round(input[i+attrCount*2]);
+      int y3 = (int)round(input[i+attrCount*2 + 1]);
+
+      sort2D(&x1, &y1, &x2, &y2, &x3, &y3, screenHeight, 1, 1);
+      
+      if (x1 == 0 && x2 == 0 && x3 == 0 && y1 == 0 && y2 == 0 && y3 == 0) {
+        return;
+      }
+      //printf("(%d, %d), (%d, %d), (%d, %d)\n", x1, y1, x2, y2, x3, y3);
+
+      if (y2 == y3) {
+        fillFb(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, tCount, r, g, b, attrCount);
+      } else if (y1 == y2) {
+        fillFt(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, tCount, r, g, b, attrCount);
+      } else {
+        float s1 = (((float)y3 - (float)y1) / ((float)x3 - (float)x1));
+        float b1 = ((float)y3 - (s1 * (float)x3));
+
+        int ax;
+
+        if (x1 != x3) {
+          ax = (int)round(((float)y2 - b1) / s1);
+        } else {
+          ax = x1;
+        }
+
+        fillFb(x1, y1, x2, y2, ax, y2, screen, screenWidth, screenHeight, tCount, r, g, b, attrCount);
+        fillFt(x2, y2, ax, y2, x3, y3, screen, screenWidth, screenHeight, tCount, r, g, b, attrCount);
+
+      }
+
+    }
+  }
+}
