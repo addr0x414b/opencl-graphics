@@ -46,6 +46,9 @@ int main() {
 	createProjMat(FOV, 0.1f, 1000.0f, projMat);
 	float scaleMat[16];
 	createScaleMat(5.f, scaleMat);
+
+	float scaleMat2[16];
+	createScaleMat(4.f, scaleMat2);
 	float transMat[16];
 	createTransMat(0.0f, 0.0f, -50.0f, transMat);
 
@@ -161,7 +164,7 @@ int main() {
 
 	};*/
 
-	float vertices[] {
+	/*float vertices[] {
 		-1.0f, 1.0f, 1.0f,
 		-1.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, 1.0f,
@@ -209,7 +212,7 @@ int main() {
 		1.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, -1.0f,
 		-1.0f, -1.0f, -1.0f,
-	};
+	};*/
 
 	float vertices2[] {
 		-1.0f, -1.0f, 1.0f,
@@ -238,24 +241,82 @@ int main() {
 	};
 
 	/*float vertices[] = {
-		-1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f, 	-1.0f, 1.0f,
-		1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f, 	1.0, 1.0,
-		0.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f, 	1.0, -1.0,
-
-		0.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f, 	1.0f, 1.0f,
-		1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f, 	-1.0f, -1.0f,
-		2.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f, 	1.0f, -1.0f
-	};*/
-
-	/*float vertices[] = {
 		-1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
 		1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
 		0.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
 
-		0.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
-		1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
-		2.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f
+		//0.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
+		//1.0f, -1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
+		//2.0f, 1.0f, 0.0f, 	0.0f, 0.0f, 1.0f,
 	};*/
+
+	/*float vertices[] = {
+		-1.0f, -1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+		1.0f, -1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+
+		1.0f, -1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+
+		-1.0f, -1.0f, 1.0f, 	-1.0f, 0.0f, 0.0f,
+		-1.0f, 1.0f, 1.0f, 	-1.0f, 0.0f, 0.0f,
+		-1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 0.0f,
+
+		-1.0f, -1.0f, -1.0f, 	-1.0f, 0.0f, 0.0f,
+		-1.0f, 1.0f, 1.0f, 	-1.0f, 0.0f, 0.0f,
+		-1.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f,
+	};*/
+
+	float vertices[] {
+		-1.0f, 1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+		1.0f, -1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+
+		1.0f, -1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f, 	0.0f, 0.0f, 1.0f,
+
+		-1.0f, 1.0f, 1.0f, 	0.0f, 1.0f, 0.0f,
+		1.0f, 1.0f, 1.0f, 	0.0f, 1.0f, 0.0f,
+		-1.0f, 1.0f, -1.0f, 	0.0f, 1.0f, 0.0f,
+
+		1.0f, 1.0f, 1.0f, 	0.0f, 1.0f, 0.0f,
+		1.0f, 1.0f, -1.0f, 	0.0f, 1.0f, 0.0f,
+		-1.0f, 1.0f, -1.0f, 	0.0f, 1.0f, 0.0f,
+
+		1.0f, 1.0f, 1.0f, 	1.0f, 0.0f, 0.0f,
+		1.0f, -1.0f, 1.0f, 	1.0f, 0.0f, 0.0f,
+		1.0f, -1.0f, -1.0f, 	1.0f, 0.0f, 0.0f,
+
+		1.0f, 1.0f, 1.0f, 	1.0f, 0.0f, 0.0f,
+		1.0f, 1.0f, -1.0f, 	1.0f, 0.0f, 0.0f,
+		1.0f, -1.0f, -1.0f, 	1.0f, 0.0f, 0.0f,
+
+		-1.0f, 1.0f, 1.0f, 	-1.0f, 0.0f, 0.0f,
+		-1.0f, -1.0f, 1.0f, 	-1.0f, 0.0f, 0.0f,
+		-1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 0.0f,
+
+		-1.0f, 1.0f, 1.0f, 	-1.0f, 0.0f, 0.0f,
+		-1.0f, 1.0f, -1.0f, 	-1.0f, 0.0f, 0.0f,
+		-1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 0.0f,
+
+		-1.0f, 1.0f, -1.0f, 	0.0f, 0.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f,
+		1.0f, 1.0f, -1.0f, 	0.0f, 0.0f, -1.0f,
+
+		1.0f, 1.0f, -1.0f, 	0.0f, 0.0f, -1.0f,
+		1.0f, -1.0f, -1.0f, 	0.0f, 0.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f,
+
+		-1.0f, -1.0f, 1.0f, 	0.0f, -1.0f, 0.0f,
+		-1.0f, -1.0f, -1.0f, 0.0f, -1.0f, 0.0f,
+		1.0f, -1.0f, 1.0f, 	0.0f, -1.0f, 0.0f,
+
+		1.0f, -1.0f, 1.0f, 	0.0f, -1.0f, 0.0f,
+		1.0f, -1.0f, -1.0f, 	0.0f, -1.0f, 0.0f,
+		-1.0f, -1.0f, -1.0f, 0.0f, -1.0f, 0.0f
+	};
 
 	int pointCount = sizeof(vertices) / sizeof(float);
 	int pointCount2 = sizeof(vertices2) / sizeof(float);
@@ -357,7 +418,7 @@ int main() {
 
 		float rotMat[16];
 		createRotMat(0.0f, rot, rot, rotMat);
-		//rot += 0.5f;
+		rot += 0.5f;
 
 		float rotMat2[16];
 		createRotMat(0.0f, rot2, 0.0f, rotMat2);
@@ -369,11 +430,16 @@ int main() {
 
 		int screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
 
-		clg.drawWireframeDots(vertices, 3, pointCount, 0, 255, 0,
-				255, 255, 255, 3, scaleMat, rotMat, transMat, viewMat, projMat, true);
+		//clg.drawWireframeDots(vertices, 6, pointCount, 0, 0, 255,
+		//		255, 255, 255, 3, scaleMat2, rotMat, transMat, viewMat, projMat, true);
 
-		clg.drawWireframeDots(vertices2, 3, pointCount2, 255, 255, 0,
-				255, 255, 255, 3, scaleMat, rotMat2, transMat2, viewMat, projMat, false);
+		//clg.drawWireframeDots(vertices2, 3, pointCount2, 255, 255, 0,
+		//		255, 255, 255, 3, scaleMat, rotMat2, transMat2, viewMat, projMat, false);
+
+		clg.drawTrigs(vertices, 6, pointCount, 0, 255, 0,
+		scaleMat, rotMat, transMat, viewMat, projMat,
+		cameraPos.x, cameraPos.y, cameraPos.z);
+
 
 		//clg.drawWireframeDots(vertices, 3, pointCount);
 
