@@ -62,6 +62,64 @@ int screenHeight, int r, int g, int b) {
   }
 }
 
+void fillFb(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
+int screenWidth, int screenHeight, int r, int g, int b) {
+  float s1 = (((float)y3 - (float)y1) / ((float)x3 - (float)x1));
+  float b1 = ((float)y1 - (s1 * (float)x1));
+
+  float s2 = (((float)y2 - (float)y1) / ((float)x2 - (float)x1));
+  float b2 = ((float)y1 - (s2 * (float)x1));
+
+  //printf("(%d, %d), (%d, %d), (%d, %d)\n", x1, y1, x2, y2, x3, y3);
+
+  int ax;
+  int bx;
+
+  for (int y = y1; y <= y3; y++) {
+    if (x1 != x3) {
+      ax = (int)round(((float)y - b1) / s1);
+    } else {
+      ax = x1;
+    }
+
+    if (x1 != x2) {
+      bx = (int)round(((float)y - b2) / s2);
+    } else {
+      bx = x1;
+    }
+
+    drawLine(ax, y, bx, y, screen, screenWidth, screenHeight, r, g, b);
+  }
+}
+
+void fillFt(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
+int screenWidth, int screenHeight, int r, int g, int b) {
+  float s1 = (((float)y3 - (float)y1) / ((float)x3 - (float)x1));
+  float b1 = ((float)y3 - (s1 * (float)x3));
+
+  float s2 = (((float)y3 - (float)y2) / ((float)x3 - (float)x2));
+  float b2 = ((float)y3 - (s2 * (float)x3));
+
+  int ax;
+  int bx;
+
+  for (int y = y3; y >= y1; y--) {
+    if (x1 != x3) {
+      ax = (int)round(((float)y - b1) / s1);
+    } else {
+      ax = x1;
+    }
+
+    if (x2 != x3) {
+      bx = (int)round(((float)y - b2) / s2);
+    } else {
+      bx = x2;
+    }
+
+    drawLine(ax, y, bx, y, screen, screenWidth, screenHeight, r, g, b);
+  }
+}
+
 void drawPoints(float* input, int* screen, int screenWidth, int screenHeight,
 int r, int g, int b, int thickness, int attrCount, int tCount) {
 
@@ -171,14 +229,87 @@ void sort2D(int* x1, int* y1, int* x2, int* y2, int* x3, int* y3, int n, int gl,
   }
 }
 
+void fillTrig(int x1, int y1, int x2, int y2, int x3, int y3, int* screen, int screenWidth, int screenHeight, int r, int g, int b) {
+
+  int xx1 = x1;
+  int yy1 = y1;
+
+  int xx2 = x2;
+  int yy2 = y2;
+
+  int xx3 = x3;
+  int yy3 = y3;
+
+  sort2D(&xx1, &yy1, &xx2, &yy2, &xx3, &yy3, screenHeight, 1, 1);
+
+  if (xx1 == 0 && xx2 == 0 && xx3 == 0 && yy1 == 0 && yy2 == 0 && yy3 == 0) {
+    return;
+  }
+  //printf("(%d, %d), (%d, %d), (%d, %d)\n", x1, y1, x2, y2, x3, y3);
+
+  if (yy2 == yy3) {
+    fillFb(xx1, yy1, xx2, yy2, xx3, yy3, screen, screenWidth, screenHeight, r, g, b);
+  } else if (yy1 == yy2) {
+    fillFt(xx1, yy1, xx2, yy2, xx3, yy3, screen, screenWidth, screenHeight, r, g, b);
+  } else {
+    float s1 = (((float)yy3 - (float)yy1) / ((float)xx3 - (float)xx1));
+    float b1 = ((float)yy3 - (s1 * (float)xx3));
+
+    int ax;
+
+    if (xx1 != xx3) {
+      ax = (int)round(((float)yy2 - b1) / s1);
+    } else {
+      ax = xx1;
+    }
+
+    fillFb(xx1, yy1, xx2, yy2, ax, yy2, screen, screenWidth, screenHeight, r, g, b);
+    fillFt(xx2, yy2, ax, yy2, xx3, yy3, screen, screenWidth, screenHeight, r, g, b);
+
+  }
+
+}
+
 void clipTop(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
-int screenWidth, int screenHeight, int r, int g, int b) {
+int screenWidth, int screenHeight, int r, int g, int b, int fill) {
 
   int clipAmt = 1;
   if (y1 > clipAmt && y2 > clipAmt && y3 > clipAmt) {
-    drawLine(x1, y1, x2, y2, screen, screenWidth, screenHeight, r, g, b);
-    drawLine(x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
-    drawLine(x3, y3, x1, y1, screen, screenWidth, screenHeight, r, g, b);
+    if (fill == 0) {
+      drawLine(x1, y1, x2, y2, screen, screenWidth, screenHeight, r, g, b);
+      drawLine(x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+      drawLine(x3, y3, x1, y1, screen, screenWidth, screenHeight, r, g, b);
+    } else if (fill == 1) {
+      fillTrig(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+      /*sort2D(&x1, &y1, &x2, &y2, &x3, &y3, screenHeight, 1, 1);
+      
+      if (x1 == 0 && x2 == 0 && x3 == 0 && y1 == 0 && y2 == 0 && y3 == 0) {
+        return;
+      }
+      //printf("(%d, %d), (%d, %d), (%d, %d)\n", x1, y1, x2, y2, x3, y3);
+
+      if (y2 == y3) {
+        fillFb(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+      } else if (y1 == y2) {
+        fillFt(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+      } else {
+        float s1 = (((float)y3 - (float)y1) / ((float)x3 - (float)x1));
+        float b1 = ((float)y3 - (s1 * (float)x3));
+
+        int ax;
+
+        if (x1 != x3) {
+          ax = (int)round(((float)y2 - b1) / s1);
+        } else {
+          ax = x1;
+        }
+
+        fillFb(x1, y1, x2, y2, ax, y2, screen, screenWidth, screenHeight, r, g, b);
+        fillFt(x2, y2, ax, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+
+      }*/
+
+    }
   } else if (y1 < clipAmt && y2 < clipAmt && y3 < clipAmt) {
 
   } else {
@@ -206,13 +337,73 @@ int screenWidth, int screenHeight, int r, int g, int b) {
         bx = x2;
       }
 
-      drawLine(x1, y1, ax, ay, screen, screenWidth, screenHeight, r, g, b);
-      drawLine(ax, ay, x2, y2, screen, screenWidth, screenHeight, r, g, b);
-      drawLine(x2, y2, x1, y1, screen, screenWidth, screenHeight, r, g, b);
+      if (fill == 0) {
+        drawLine(x1, y1, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+        drawLine(ax, ay, x2, y2, screen, screenWidth, screenHeight, r, g, b);
+        drawLine(x2, y2, x1, y1, screen, screenWidth, screenHeight, r, g, b);
 
-      drawLine(ax, ay, bx, by, screen, screenWidth, screenHeight, r, g, b);
-      drawLine(bx, by, x2, y2, screen, screenWidth, screenHeight, r, g, b);
-      drawLine(x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+        drawLine(ax, ay, bx, by, screen, screenWidth, screenHeight, r, g, b);
+        drawLine(bx, by, x2, y2, screen, screenWidth, screenHeight, r, g, b);
+        drawLine(x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+      } else if (fill == 1) {
+        fillTrig(x1, y1, ax, ay, x2, y2, screen, screenWidth, screenHeight, r, g, b);
+        fillTrig(ax, ay, x2, y2, bx, by, screen, screenWidth, screenHeight, r, g, b);
+        /*sort2D(&x1, &y1, &x2, &y2, &ax, &ay, screenHeight, 1, 1);
+
+        if (x1 == 0 && x2 == 0 && ax == 0 && y1 == 0 && y2 == 0 && ay == 0) {
+          return;
+        }
+        //printf("(%d, %d), (%d, %d), (%d, %d)\n", x1, y1, x2, y2, ax, ay);
+
+        if (y2 == ay) {
+          fillFb(x1, y1, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+        } else if (y1 == y2) {
+          fillFt(x1, y1, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+        } else {
+          float s1 = (((float)ay - (float)y1) / ((float)ax - (float)x1));
+          float b1 = ((float)ay - (s1 * (float)ax));
+
+          int aax;
+
+          if (x1 != ax) {
+            aax = (int)round(((float)y2 - b1) / s1);
+          } else {
+            aax = x1;
+          }
+
+          fillFb(x1, y1, x2, y2, aax, y2, screen, screenWidth, screenHeight, r, g, b);
+          fillFt(x2, y2, aax, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+
+        }
+        sort2D(&ax, &ay, &x2, &y2, &bx, &by, screenHeight, 1, 1);
+
+        if (ax == 0 && x2 == 0 && bx == 0 && ay == 0 && y2 == 0 && by == 0) {
+          return;
+        }
+        printf("(%d, %d), (%d, %d), (%d, %d)\n", ax, ay, x2, y2, bx, by);
+
+        if (y2 == by) {
+          fillFb(ax, ay, x2, y2, bx, by, screen, screenWidth, screenHeight, r, g, b);
+        } else if (ay == y2) {
+          fillFt(ax, ay, x2, y2, bx, by, screen, screenWidth, screenHeight, r, g, b);
+        } else {
+          float s1 = (((float)by - (float)ay) / ((float)bx - (float)ax));
+          float b1 = ((float)by - (s1 * (float)bx));
+
+          int aaax;
+
+          if (ax != bx) {
+            aaax = (int)round(((float)y2 - b1) / s1);
+          } else {
+            aaax = ax;
+          }
+
+          fillFb(ax, ay, x2, y2, aaax, y2, screen, screenWidth, screenHeight, r, g, b);
+          fillFt(x2, y2, aaax, y2, bx, by, screen, screenWidth, screenHeight, r, g, b);
+
+        }*/
+
+      }
     } else {
       int ax = 0;
       int ay = clipAmt;
@@ -235,20 +426,24 @@ int screenWidth, int screenHeight, int r, int g, int b) {
         bx = x1;
       }
 
-      drawLine(x1, y1, ax, ay, screen, screenWidth, screenHeight, r, g, b);
-      drawLine(ax, ay, bx, by, screen, screenWidth, screenHeight, r, g, b);
-      drawLine(bx, by, x1, y1, screen, screenWidth, screenHeight, r, g, b);
+      if (fill == 0) {
+        drawLine(x1, y1, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+        drawLine(ax, ay, bx, by, screen, screenWidth, screenHeight, r, g, b);
+        drawLine(bx, by, x1, y1, screen, screenWidth, screenHeight, r, g, b);
+      } else if (fill == 1) {
+        fillTrig(x1, y1, ax, ay, bx, by, screen, screenWidth, screenHeight, r, g, b);
+      }
     }
 
   }
 }
 
 void clipLeft(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
-int screenWidth, int screenHeight, int r, int g, int b) {
+int screenWidth, int screenHeight, int r, int g, int b, int fill) {
 
   int clipAmt = 1;
   if (x1 > clipAmt && x2 > clipAmt && x3 > clipAmt) {
-      clipTop(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+      clipTop(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b, fill);
   } else if (x1 < clipAmt && x2 < clipAmt && x3 < clipAmt) {
 
   } else {
@@ -276,8 +471,8 @@ int screenWidth, int screenHeight, int r, int g, int b) {
         bx = x2;
       }
 
-      clipTop(x1, y1, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
-      clipTop(bx, by, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+      clipTop(x1, y1, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b, fill);
+      clipTop(bx, by, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b, fill);
     } else {
       int ax = clipAmt;
       int ay = 0;
@@ -300,18 +495,18 @@ int screenWidth, int screenHeight, int r, int g, int b) {
         bx = x1;
       }
 
-      clipTop(x1, y1, bx, by, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+      clipTop(x1, y1, bx, by, ax, ay, screen, screenWidth, screenHeight, r, g, b, fill);
     }
 
   }
 }
 
 void clipBot(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
-int screenWidth, int screenHeight, int r, int g, int b) {
+int screenWidth, int screenHeight, int r, int g, int b, int fill) {
 
   int clipAmt = screenHeight - 1;
   if (y1 < clipAmt && y2 < clipAmt && y3 < clipAmt) {
-      clipLeft(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+      clipLeft(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b, fill);
   } else if (y1 > clipAmt && y2 > clipAmt && y3 > clipAmt) {
 
   } else {
@@ -339,8 +534,8 @@ int screenWidth, int screenHeight, int r, int g, int b) {
         bx = x2;
       }
 
-      clipLeft(x1, y1, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
-      clipLeft(bx, by, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+      clipLeft(x1, y1, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b, fill);
+      clipLeft(bx, by, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b, fill);
     } else {
       int ax = 0;
       int ay = clipAmt;
@@ -363,18 +558,18 @@ int screenWidth, int screenHeight, int r, int g, int b) {
         bx = x1;
       }
 
-      clipLeft(x1, y1, bx, by, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+      clipLeft(x1, y1, bx, by, ax, ay, screen, screenWidth, screenHeight, r, g, b, fill);
     }
 
   }
 }
 
 void clipDraw(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
-int screenWidth, int screenHeight, int r, int g, int b) {
+int screenWidth, int screenHeight, int r, int g, int b, int fill) {
 
   int clipAmt = screenWidth - 1;
   if (x1 < clipAmt && x2 < clipAmt && x3 < clipAmt) {
-      clipBot(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+      clipBot(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b, fill);
   } else if (x1 > clipAmt && x2 > clipAmt && x3 > clipAmt) {
   } else {
     sort2D(&x1, &y1, &x2, &y2, &x3, &y3, screenWidth, 1, 0);
@@ -400,8 +595,8 @@ int screenWidth, int screenHeight, int r, int g, int b) {
         by = (int)round(((s2*(float)bx) + b2));
       }
 
-      clipBot(x1, y1, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
-      clipBot(bx, by, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+      clipBot(x1, y1, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b, fill);
+      clipBot(bx, by, x2, y2, ax, ay, screen, screenWidth, screenHeight, r, g, b, fill);
     } else {
       int ax = clipAmt;
       int ay = 0;
@@ -424,7 +619,7 @@ int screenWidth, int screenHeight, int r, int g, int b) {
         by = (int)round((s2*(float)bx) + b2);
       }
 
-      clipBot(x1, y1, bx, by, ax, ay, screen, screenWidth, screenHeight, r, g, b);
+      clipBot(x1, y1, bx, by, ax, ay, screen, screenWidth, screenHeight, r, g, b, fill);
     }
   }
 }
@@ -444,7 +639,7 @@ int tCount, int r, int g, int b, int attrCount) {
       int x3 = (int)round(input[i+attrCount*2]);
       int y3 = (int)round(input[i+attrCount*2 + 1]);
 
-      clipDraw(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b);
+      clipDraw(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b, 0);
     }
   }
 }
@@ -708,63 +903,6 @@ float camY, float camZ, int attrCount, int tCount) {
   }
 }
 
-void fillFb(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
-int screenWidth, int screenHeight, int tCount, int r, int g, int b, int attrCount) {
-  float s1 = (((float)y3 - (float)y1) / ((float)x3 - (float)x1));
-  float b1 = ((float)y1 - (s1 * (float)x1));
-
-  float s2 = (((float)y2 - (float)y1) / ((float)x2 - (float)x1));
-  float b2 = ((float)y1 - (s2 * (float)x1));
-
-  //printf("(%d, %d), (%d, %d), (%d, %d)\n", x1, y1, x2, y2, x3, y3);
-
-  int ax;
-  int bx;
-
-  for (int y = y1; y <= y3; y++) {
-    if (x1 != x3) {
-      ax = (int)round(((float)y - b1) / s1);
-    } else {
-      ax = x1;
-    }
-
-    if (x1 != x2) {
-      bx = (int)round(((float)y - b2) / s2);
-    } else {
-      bx = x1;
-    }
-
-    drawLine(ax, y, bx, y, screen, screenWidth, screenHeight, r, g, b);
-  }
-}
-
-void fillFt(int x1, int y1, int x2, int y2, int x3, int y3, int* screen,
-int screenWidth, int screenHeight, int tCount, int r, int g, int b, int attrCount) {
-  float s1 = (((float)y3 - (float)y1) / ((float)x3 - (float)x1));
-  float b1 = ((float)y3 - (s1 * (float)x3));
-
-  float s2 = (((float)y3 - (float)y2) / ((float)x3 - (float)x2));
-  float b2 = ((float)y3 - (s2 * (float)x3));
-
-  int ax;
-  int bx;
-
-  for (int y = y3; y >= y1; y--) {
-    if (x1 != x3) {
-      ax = (int)round(((float)y - b1) / s1);
-    } else {
-      ax = x1;
-    }
-
-    if (x2 != x3) {
-      bx = (int)round(((float)y - b2) / s2);
-    } else {
-      bx = x2;
-    }
-
-    drawLine(ax, y, bx, y, screen, screenWidth, screenHeight, r, g, b);
-  }
-}
 
 void fillTrigs(float* input, int* screen, int screenWidth, int screenHeight,
 int tCount, int r, int g, int b, int attrCount) {
@@ -781,7 +919,9 @@ int tCount, int r, int g, int b, int attrCount) {
       int x3 = (int)round(input[i+attrCount*2]);
       int y3 = (int)round(input[i+attrCount*2 + 1]);
 
-      sort2D(&x1, &y1, &x2, &y2, &x3, &y3, screenHeight, 1, 1);
+      clipDraw(x1, y1, x2, y2, x3, y3, screen, screenWidth, screenHeight, r, g, b, 1);
+
+      /*sort2D(&x1, &y1, &x2, &y2, &x3, &y3, screenHeight, 1, 1);
       
       if (x1 == 0 && x2 == 0 && x3 == 0 && y1 == 0 && y2 == 0 && y3 == 0) {
         return;
@@ -807,7 +947,7 @@ int tCount, int r, int g, int b, int attrCount) {
         fillFb(x1, y1, x2, y2, ax, y2, screen, screenWidth, screenHeight, tCount, r, g, b, attrCount);
         fillFt(x2, y2, ax, y2, x3, y3, screen, screenWidth, screenHeight, tCount, r, g, b, attrCount);
 
-      }
+      }*/
 
     }
   }
