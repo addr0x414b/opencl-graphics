@@ -53,7 +53,7 @@ int main() {
 	createTransMat(0.0f, 0.0f, -50.0f, transMat);
 
 	float transMat2[16];
-	createTransMat(25.0f, 0.0f, -50.0f, transMat2);
+	createTransMat(0.0f, 15.0f, -50.0f, transMat2);
 
 	/*float vertices[] = {
 		-1.0f, -1.0f, 0.0f,
@@ -422,7 +422,7 @@ int main() {
 
 		float rotMat2[16];
 		createRotMat(0.0f, rot2, 0.0f, rotMat2);
-		//rot2 += 1.f;
+		rot2 += 1.f;
 
 		vec3 target(cameraPos.x+front.x, cameraPos.y+front.y, cameraPos.z+front.z);
 		float viewMat[16];
@@ -430,19 +430,24 @@ int main() {
 
 		int screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
 
-		//clg.drawWireframeDots(vertices, 6, pointCount, 0, 0, 255,
-		//		255, 255, 255, 3, scaleMat2, rotMat, transMat, viewMat, projMat, true);
+		//clg.drawWireframeDots(vertices, 6, pointCount, 255, 0, 0,
+				//255, 255, 255, 3, scaleMat2, rotMat, transMat, viewMat, projMat, true);
 
-		//clg.drawWireframeDots(vertices2, 3, pointCount2, 255, 255, 0,
-		//		255, 255, 255, 3, scaleMat, rotMat2, transMat2, viewMat, projMat, false);
+		clg.drawWireframeDots(vertices2, 3, pointCount2, 255, 255, 0,
+				255, 255, 255, 3, scaleMat, rotMat2, transMat2, viewMat, projMat, false);
 
-		clg.fillTrigs(vertices, 6, pointCount, 0, 255, 0,
+		//clg.fillTrigs(vertices, 6, pointCount, 0, 10, 100,
+		//scaleMat, rotMat, transMat, viewMat, projMat,
+		//cameraPos.x, cameraPos.y, cameraPos.z);
+
+		//clg.drawTrigs(vertices, 6, pointCount, 255, 0, 0,
+		//scaleMat, rotMat, transMat, viewMat, projMat,
+		//cameraPos.x, cameraPos.y, cameraPos.z);
+
+		clg.shadeTrigs(vertices, 6, pointCount, 200, 0, 0,
 		scaleMat, rotMat, transMat, viewMat, projMat,
-		cameraPos.x, cameraPos.y, cameraPos.z);
-
-		clg.drawTrigs(vertices, 6, pointCount, 255, 0, 0,
-		scaleMat, rotMat, transMat, viewMat, projMat,
-		cameraPos.x, cameraPos.y, cameraPos.z);
+		cameraPos.x, cameraPos.y, cameraPos.z, 0.0f, 0.0f, -1.0f,
+		2, 2, 2);
 
 
 

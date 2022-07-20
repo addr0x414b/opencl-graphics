@@ -499,6 +499,165 @@ void clg::fillTrigs(float* vertices, int attrCount, int tCount,
 	fillTrigs(args);
 }
 
+/* Shade triangles utilizing their normals and light direction
+ * (MUST BE FACE NORMALS, FLAT)
+ * @param vertices: array of the vertices
+ * @param attrCount: number of items combined for each attribute
+ * @param tCount: total number in vertices
+ * @params lR, lG, lB: line red, green, blue values 0-255
+ * @params scaleMat, rotMat, transMat, projMat: vertex matrices
+ * @params camX, camY, camZ: camera X,Y,Z position
+ * @params lx, ly, lz: directional light vector params
+ * @params aR, aG, aB: ambient light values */
+void clg::shadeTrigs(float* vertices, int attrCount, int tCount,
+		int lR, int lG, int lB,
+		float* scaleMat, float* rotMat, float* transMat, float* viewMat,
+		float* projMat, float camX, float camY, float camZ,
+		float lx, float ly, float lz, int aR, int aG, int aB) {
+
+	cl::EnqueueArgs args(queue, cl::NDRange(tCount));
+
+	cl::Kernel shadeTrigsKernel(pipelineProgram, "shadeTrigsKernel", &err);
+	checkError(err, "ShadeTrigsKernel creation");
+	cl::KernelFunctor<> shadeTrigs(shadeTrigsKernel);
+
+	cl::Buffer inputBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			(tCount)*sizeof(float), vertices, &err);
+	checkError(err, "InputBuf creation");
+	err = shadeTrigsKernel.setArg(0, sizeof(cl_mem), &inputBuf);
+	checkError(err, "DrawTrigsKernel Arg 0 (input)");
+
+	cl::Buffer outputBuf(context, CL_MEM_READ_WRITE,
+			(tCount)*sizeof(float), NULL, &err);
+	checkError(err, "OutputBuf creation");
+	err = shadeTrigsKernel.setArg(1, sizeof(cl_mem), &outputBuf);
+	checkError(err, "DrawTrigsKernel Arg 1 (output)");
+
+	err = shadeTrigsKernel.setArg(2, sizeof(int), &attrCount);
+	checkError(err, "DrawTrigsKernel Arg 2 (attrCount)");
+
+	err = shadeTrigsKernel.setArg(3, sizeof(int), &tCount);
+	checkError(err, "DrawTrigsKernel Arg 3 (tCount)");
+
+	cl::Buffer output2Buf(context, CL_MEM_READ_WRITE,
+			(tCount)*sizeof(float), NULL, &err);
+	checkError(err, "Output2Buf creation");
+	err = shadeTrigsKernel.setArg(4, sizeof(cl_mem), &output2Buf);
+	checkError(err, "DrawTrigsKernel Arg 4 (output2)");
+
+	cl::Buffer zClipOutBuf(context, CL_MEM_READ_WRITE,
+			(tCount)*sizeof(float), NULL, &err);
+	checkError(err, "ZClipOutBuf creation");
+	err = shadeTrigsKernel.setArg(5, sizeof(cl_mem), &zClipOutBuf);
+	checkError(err, "DrawTrigsKernel Arg 5 (zClipOut)");
+
+	cl::Buffer clippedOrigBuf(context, CL_MEM_READ_WRITE,
+			(tCount)*sizeof(float), NULL, &err);
+	checkError(err, "ClippedOrigBuf creation");
+	err = shadeTrigsKernel.setArg(6, sizeof(cl_mem), &clippedOrigBuf);
+	checkError(err, "DrawTrigsKernel Arg 6 (clippedOrig)");
+
+	int lineP[] = { lR, lG, lB};
+	cl::Buffer lineParams(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			4*sizeof(int), lineP, &err);
+	checkError(err, "LineParams creation");
+	err = shadeTrigsKernel.setArg(7, sizeof(cl_mem), &lineParams);
+	checkError(err, "DrawTrigsKernel Arg 7 (lineParams)");
+
+	cl::Buffer scaleMatBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			16*sizeof(float), scaleMat, &err);
+	checkError(err, "ScaleMatBuf creation");
+	err = shadeTrigsKernel.setArg(8, sizeof(cl_mem), &scaleMatBuf);
+	checkError(err, "DrawTrigsKernel Arg 8 (scaleMat)");
+
+	cl::Buffer scaleOutBuf(context, CL_MEM_READ_WRITE,
+			(tCount)*sizeof(float), NULL, &err);
+	checkError(err, "ScaleOutBuf creation");
+	err = shadeTrigsKernel.setArg(9, sizeof(cl_mem), &scaleOutBuf);
+	checkError(err, "DrawTrigsKernel Arg 9 (scaleOut)");
+
+	cl::Buffer rotMatBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			16*sizeof(float), rotMat, &err);
+	checkError(err, "RotMatBuf creation");
+	err = shadeTrigsKernel.setArg(10, sizeof(cl_mem), &rotMatBuf);
+	checkError(err, "DrawTrigsKernel Arg 10 (rotMat)");
+
+	cl::Buffer rotOutBuf(context, CL_MEM_READ_WRITE,
+			(tCount)*sizeof(float), NULL, &err);
+	checkError(err, "RotOutBuf creation");
+	err = shadeTrigsKernel.setArg(11, sizeof(cl_mem), &rotOutBuf);
+	checkError(err, "DrawTrigsKernel Arg 11 (rotOut)");
+
+	cl::Buffer transMatBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			16*sizeof(float), transMat, &err);
+	checkError(err, "TransMatBuf creation");
+	err = shadeTrigsKernel.setArg(12, sizeof(cl_mem), &transMatBuf);
+	checkError(err, "DrawTrigsKernel Arg 12 (transMat)");
+
+	cl::Buffer transOutBuf(context, CL_MEM_READ_WRITE,
+			(tCount)*sizeof(float), NULL, &err);
+	checkError(err, "TransOutBuf creation");
+	err = shadeTrigsKernel.setArg(13, sizeof(cl_mem), &transOutBuf);
+	checkError(err, "DrawTrigsKernel Arg 13 (transOut)");
+
+	cl::Buffer viewMatBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			16*sizeof(float), viewMat, &err);
+	checkError(err, "ViewMatBuf creation");
+	err = shadeTrigsKernel.setArg(14, sizeof(cl_mem), &viewMatBuf);
+	checkError(err, "DrawTrigsKernel Arg 14 (viewMat)");
+
+	cl::Buffer viewOutBuf(context, CL_MEM_READ_WRITE,
+			(tCount)*sizeof(float), NULL, &err);
+	checkError(err, "ViewOutBuf creation");
+	err = shadeTrigsKernel.setArg(15, sizeof(cl_mem), &viewOutBuf);
+	checkError(err, "DrawTrigsKernel Arg 15 (viewOut)");
+
+	cl::Buffer projMatBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			16*sizeof(float), projMat, &err);
+	checkError(err, "ProjMatBuf creation");
+	err = shadeTrigsKernel.setArg(16, sizeof(cl_mem), &projMatBuf);
+	checkError(err, "DrawTrigsKernel Arg 16 (projMat)");
+
+	err = shadeTrigsKernel.setArg(17, sizeof(cl_mem), &screenBuf);
+	checkError(err, "DrawTrigsKernel Arg 17 (screen)");
+
+	err = shadeTrigsKernel.setArg(18, sizeof(int), &screenWidth);
+	checkError(err, "DrawTrigsKernel Arg 18 (screenWidth)");
+
+	err = shadeTrigsKernel.setArg(19, sizeof(int), &screenHeight);
+	checkError(err, "DrawTrigsKernel Arg 19 (screenHeight)");
+
+	float camP[] = { camX, camY, camZ };
+	cl::Buffer camPos(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			3*sizeof(float), camP, &err);
+	checkError(err, "CamPos creation");
+	err = shadeTrigsKernel.setArg(20, sizeof(cl_mem), &camPos);
+	checkError(err, "DrawTrigsKernel Arg 20 (camPos)");
+
+	cl::Buffer visibleOutBuf(context, CL_MEM_READ_WRITE,
+			(tCount)*sizeof(float), NULL, &err);
+	checkError(err, "VisibleOutBuf creation");
+	err = shadeTrigsKernel.setArg(21, sizeof(cl_mem), &visibleOutBuf);
+	checkError(err, "DrawTrigsKernel Arg 21 (visibleOut)");
+
+	float lightP[] = { lx, ly, lz};
+	cl::Buffer lightParams(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			3*sizeof(float), lightP, &err);
+	checkError(err, "LightParams creation");
+	err = shadeTrigsKernel.setArg(22, sizeof(cl_mem), &lightParams);
+	checkError(err, "DrawTrigsKernel Arg 22 (lightParams)");
+
+	int aP[] = { aR, aG, aB};
+	cl::Buffer ambientParams(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+			3*sizeof(int), aP, &err);
+	checkError(err, "AmbientParams creation");
+	err = shadeTrigsKernel.setArg(23, sizeof(cl_mem), &ambientParams);
+	checkError(err, "DrawTrigsKernel Arg 23 (ambientParams)");
+
+	shadeTrigs(args);
+
+}
+
 /* Set the screen size. Useful when updating the screen resolution
  * @params sWidth, sHeight: new screen width and height */
 void clg::setScreenWidthHeight(int sWidth, int sHeight) {
