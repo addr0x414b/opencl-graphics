@@ -708,6 +708,11 @@ void multiply(float* input, float* output, float* m, int attrCount, int tCount, 
           output[i+5] = output[i+5] / w;
         }
 
+        if (attrCount > 6) {
+          output[i+6] = input[i+6];
+          output[i+7] = input[i+7];
+        }
+
       }
     }
 
@@ -902,7 +907,34 @@ float camY, float camZ, int attrCount, int tCount) {
         output[i+4] = input[i+4];
         output[i+5] = input[i+5];
 
-        output[i+6] = input[i+6];
+        output[i+attrCount] = input[i+attrCount];
+        output[i+attrCount+1] = input[i+attrCount+1];
+        output[i+attrCount+2] = input[i+attrCount+2];
+
+        output[i+attrCount+3] = input[i+attrCount+3];
+        output[i+attrCount+4] = input[i+attrCount+4];
+        output[i+attrCount+5] = input[i+attrCount+5];
+
+        output[i+attrCount*2] = input[i+attrCount*2];
+        output[i+attrCount*2+1] = input[i+attrCount*2+1];
+        output[i+attrCount*2+2] = input[i+attrCount*2+2];
+
+        output[i+attrCount*2+3] = input[i+attrCount*2+3];
+        output[i+attrCount*2+4] = input[i+attrCount*2+4];
+        output[i+attrCount*2+5] = input[i+attrCount*2+5];
+
+        if (attrCount > 6) {
+          output[i+6] = input[i+6];
+          output[i+7] = input[i+7];
+
+          output[i+attrCount+6] = input[i+attrCount+6];
+          output[i+attrCount+7] = input[i+attrCount+7];
+
+          output[i+attrCount*2+6] = input[i+attrCount*2+6];
+          output[i+attrCount*2+7] = input[i+attrCount*2+7];
+        }
+
+        /*output[i+6] = input[i+6];
         output[i+7] = input[i+7];
         output[i+8] = input[i+8];
 
@@ -916,7 +948,7 @@ float camY, float camZ, int attrCount, int tCount) {
 
         output[i+15] = input[i+15];
         output[i+16] = input[i+16];
-        output[i+17] = input[i+17];
+        output[i+17] = input[i+17];*/
       }
     }
     /*if (attrCount > 3) {

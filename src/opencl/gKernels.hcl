@@ -35,6 +35,8 @@ __kernel void shadeTrigsKernel(
 
 		centerPoints(output, output, screenWidth, screenHeight, attrCount, tCount);
 		centerPoints(output2, output2, screenWidth, screenHeight, attrCount, tCount);
+		printf("(%f, %f, %f)  (%f, %f, %f)  (%f, %f)\n", output[0], output[1], output[2],
+		output[3], output[4], output[5], output[6], output[7]);
 		barrier(CLK_GLOBAL_MEM_FENCE);
 
 		shadeTrigs(output, screen, screenWidth, screenHeight, tCount,
