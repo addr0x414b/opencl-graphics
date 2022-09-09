@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <img src="https://i.postimg.cc/gk3NSnRk/rotating-filled-shaded-3.gif" alt="Logo" width="800">
+  <img src="https://i.postimg.cc/bN2NKjNv/rotating-filled-shaded-3.gif" alt="Logo" width="800">
 
 
 <h3 align="center">OpenCL Graphics</h3>
