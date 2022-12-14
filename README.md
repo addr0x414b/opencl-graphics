@@ -32,3 +32,15 @@ Below shows some key features of the OpenCL Graphics library.
 ### All major computations performed on the GPU via OpenCL!
 
 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLLiNsc1PgqcYTHKeG4r5ZTmYszhhOubJ4bg8fxzsF6umNI_HRA_1jCWzdJMmMWdVJ8ow&usqp=CAU" width=200>
+
+## The Basic Steps:
+
+1. Perform a while loop in which the window + graphics will run (SDL2 is used for the actual window)
+
+2. Each iteration, send all necessary numbers to the GPU via a buffer (this is done with OpenCL)
+
+3. Perform all calculations on the GPU in parallel
+
+4. Send back the data in a buffer
+
+5. Draw to the screen on SDL2 via a texture
