@@ -29,6 +29,6 @@ Below shows some key features of the OpenCL Graphics library.
 ### Other Features
 * Flat basic lighting
 
-### All computations performed on the GPU via OpenCL!
+### All major computations performed on the GPU via OpenCL!
 
 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLLiNsc1PgqcYTHKeG4r5ZTmYszhhOubJ4bg8fxzsF6umNI_HRA_1jCWzdJMmMWdVJ8ow&usqp=CAU" width=200>
